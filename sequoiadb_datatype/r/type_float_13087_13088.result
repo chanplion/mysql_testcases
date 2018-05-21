@@ -1,0 +1,168 @@
+create table table_float_t1 (a float);
+insert into table_float_t1 values (1);
+select max(a),min(a),avg(a) from table_float_t1;
+max(a)	min(a)	avg(a)
+1	1	1
+drop table table_float_t1;
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+create table table_float_t1 (f float, f2 float(24), f3 float(6,2), d2 float(53));
+show full columns from table_float_t1;
+Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
+f	float	NULL	YES		NULL		#	
+f2	float	NULL	YES		NULL		#	
+f3	float(6,2)	NULL	YES		NULL		#	
+d2	double	NULL	YES		NULL		#	
+drop table table_float_t1;
+create table table_float_t1 (a float(200,100));
+ERROR 42000: Too big scale 100 specified for column 'a'. Maximum is 30.
+create table table_float_t1 (c20 char(16));
+insert into table_float_t1 values (5000.0);
+insert into table_float_t1 values (0.5e4);
+drop table table_float_t1;
+create table table_float_t1 (f float(54));
+ERROR 42000: Incorrect column specifier for column 'f'
+drop table if exists table_float_t1;
+create table table_float_t1 (f float(4,3));
+insert into table_float_t1 values (-11.0),(-11),("-11"),(11.0),(11),("11");
+Warnings:
+Warning	1264	Out of range value for column 'f' at row 1
+Warning	1264	Out of range value for column 'f' at row 2
+Warning	1264	Out of range value for column 'f' at row 3
+Warning	1264	Out of range value for column 'f' at row 4
+Warning	1264	Out of range value for column 'f' at row 5
+Warning	1264	Out of range value for column 'f' at row 6
+select * from table_float_t1 order by f;
+f
+-9.999
+-9.999
+-9.999
+9.999
+9.999
+9.999
+drop table if exists table_float_t1;
+create table table_float_t1 (c char(20));
+insert into table_float_t1 values (5e-28);
+select * from table_float_t1 order by c;
+c
+5e-28
+drop table table_float_t1;
+create table table_float_t1 (c char(6));
+insert into table_float_t1 values (2e5),(2e6),(2e-4),(2e-5);
+select * from table_float_t1 order by c;
+c
+0.0002
+200000
+2e-5
+2e6
+drop table table_float_t1;
+create table table_float_t1 select 105213674794682365.00 + 0.0 x;
+show warnings;
+Level	Code	Message
+desc  table_float_t1;
+Field	Type	Null	Key	Default	Extra
+x	decimal(21,2)	NO		0.00	
+drop table table_float_t1;
+create table table_float_t1 select 0.0 x;
+desc table_float_t1;
+Field	Type	Null	Key	Default	Extra
+x	decimal(2,1)	NO		0.0	
+create table table_float_t2 select 105213674794682365.00 y;
+desc table_float_t2;
+Field	Type	Null	Key	Default	Extra
+y	decimal(20,2)	NO		0.00	
+create table table_float_t3 select x+y a from table_float_t1,table_float_t2;
+show warnings;
+Level	Code	Message
+desc table_float_t3;
+Field	Type	Null	Key	Default	Extra
+a	decimal(21,2)	NO		0.00	
+drop table table_float_t1,table_float_t2,table_float_t3;
+create table table_float_t1 (s1 float(0,2));
+ERROR 42000: For float(M,D), double(M,D) or decimal(M,D), M must be >= D (column 's1').
+create table table_float_t1 (s1 float(1,2));
+ERROR 42000: For float(M,D), double(M,D) or decimal(M,D), M must be >= D (column 's1').
+CREATE TABLE table_float_t1 (
+f1 real zerofill,
+f3 float zerofill);
+INSERT INTO table_float_t1 VALUES ( 0.314152e+1, 0.314152e+1);
+drop table table_float_t1;
+create table table_float_t1 (f1 float(30, 0));
+insert into table_float_t1 values (1e29), (-1e29);
+insert into table_float_t1 values (1e30), (-1e30);
+insert into table_float_t1 values (2e30), (-2e30);
+Warnings:
+Warning	1264	Out of range value for column 'f1' at row 1
+Warning	1264	Out of range value for column 'f1' at row 2
+select f1 + 0e0 from table_float_t1;
+f1 + 0e0
+1.0000000150474662e29
+-1.0000000150474662e29
+1.0000000150474662e30
+-1.0000000150474662e30
+1.0000000150474662e30
+-1.0000000150474662e30
+drop table table_float_t1;
+create table table_float_t1 (c char(6));
+insert into table_float_t1 values (2e6),(2e-5);
+select * from table_float_t1 order by c;
+c
+2e-5
+2e6
+drop table table_float_t1;
+create table table_float_t1 (a char(20));
+insert into table_float_t1 values (1.225e-05);
+select a+0 from table_float_t1;
+a+0
+0.00001225
+drop table table_float_t1;
+CREATE TABLE table_float_t1 (f FLOAT);
+INSERT INTO table_float_t1 VALUES ('1.');
+INSERT INTO table_float_t1 VALUES ('2.0.');
+Warnings:
+Warning	1265	Data truncated for column 'f' at row 1
+INSERT INTO table_float_t1 VALUES ('.');
+Warnings:
+Warning	1265	Data truncated for column 'f' at row 1
+SELECT * FROM table_float_t1 ORDER BY f;
+f
+0
+1
+2
+DROP TABLE table_float_t1;
+SET sql_mode = default;
+create table table_float_t1 (a float, b float unsigned);
+insert into table_float_t1 values(-3.402823466e+38,0);
+insert into table_float_t1 values (0.0,0.0);
+insert into table_float_t1 values (3.402e10,3.402e10);
+insert into table_float_t1 values (3.402823466351e+38,3.402823466e+38);
+insert into table_float_t1 values ('abcd','abcd');
+ERROR 01000: Data truncated for column 'a' at row 1
+insert into table_float_t1 values (-3.402823467e+38,0);
+ERROR 22003: Out of range value for column 'a' at row 1
+insert into table_float_t1 values (3.402823468e+38,0);
+ERROR 22003: Out of range value for column 'a' at row 1
+insert into table_float_t1 values (0,-1);
+ERROR 22003: Out of range value for column 'b' at row 1
+insert into table_float_t1 values (0,3.402823467e+38);
+ERROR 22003: Out of range value for column 'b' at row 1
+select * from table_float_t1 order by a;
+a	b
+-3.40282e38	0
+0	0
+34020000000	34020000000
+3.40282e38	3.40282e38
+update table_float_t1 set a = -123.456 where a <= 0 and b >= 0;
+select * from table_float_t1 order by a;
+a	b
+-123.456	0
+-123.456	0
+34020000000	34020000000
+3.40282e38	3.40282e38
+delete from table_float_t1 where b > 0;
+select * from table_float_t1 order by a;
+a	b
+-123.456	0
+-123.456	0
+drop table table_float_t1;

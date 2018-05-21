@@ -1,0 +1,40 @@
+
+#
+# test of bigint and unsigned bigint
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_bigint_t1;
+--enable_warnings
+SET SQL_WARNINGS=1;
+
+# create table and insert
+create table table_bigint_t1 (a bigint, b bigint unsigned);
+insert into table_bigint_t1 values (-9223372036854775808,0);
+insert into table_bigint_t1 values (0,0);
+insert into table_bigint_t1 values (9223372036854775807,18446744073709551615);
+--error 1366
+insert into table_bigint_t1 values ('abcd','abcd');
+--error 1264
+insert into table_bigint_t1 values (-9223372036854775809,0);
+--error 1264
+insert into table_bigint_t1 values (9223372036854775808,0);
+--error 1264
+insert into table_bigint_t1 values (0,-1);
+--error 1264
+insert into table_bigint_t1 values (0,18446744073709551616);
+select * from table_bigint_t1 order by a;
+
+# update
+update table_bigint_t1 set a = -1000000000000000 where a <= 0 and b >= 0;
+# select 
+select * from table_bigint_t1 order by a;
+# delete
+delete from table_bigint_t1 where b > 0;
+# select
+select * from table_bigint_t1 order by b;
+drop table table_bigint_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc
+# End of 4.1 tests

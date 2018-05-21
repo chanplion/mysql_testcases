@@ -1,0 +1,36 @@
+
+#
+# test of tiny and unsigned tiny
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_tiny_t1;
+--enable_warnings
+SET SQL_WARNINGS=1;
+
+# create table and insert
+create table table_tiny_t1 (a tinyint, b tinyint unsigned);
+insert into table_tiny_t1 values (-128,0);
+insert into table_tiny_t1 values (0,0);
+insert into table_tiny_t1 values (127,255);
+--error 1366
+insert into table_tiny_t1 values ('abc','abc');
+--error 1264
+insert into table_tiny_t1 values (-129,0);
+--error 1264
+insert into table_tiny_t1 values (0,256);
+select * from table_tiny_t1 order by a;
+
+# update
+update table_tiny_t1 set a = -1 where a >= 0 and b > 0;
+# select 
+select * from table_tiny_t1 order by a;
+# delete
+delete from table_tiny_t1 where a > 0;
+# select
+select * from table_tiny_t1 order by a;
+drop table table_tiny_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc
+# End of 4.1 tests

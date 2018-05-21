@@ -1,0 +1,32 @@
+#
+# test transaction/truncate
+#
+
+--source suite/sequoiadb_query/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_truncate_t1;
+--enable_warnings
+
+# create
+CREATE TABLE table_truncate_t1 (a INT NOT NULL);
+SHOW CREATE TABLE table_truncate_t1;
+# insert
+INSERT INTO table_truncate_t1 (a) VALUES (1),(2),(3),(4),(5);
+# select
+SELECT * FROM table_truncate_t1 order by a;
+# begin transaction
+START TRANSACTION;
+# truncate
+TRUNCATE TABLE table_truncate_t1;
+# select
+SELECT * FROM table_truncate_t1 order by a;
+# insert
+INSERT INTO table_truncate_t1 (a) VALUES (1),(2),(3);
+# rollback
+ROLLBACK;   
+# select
+SELECT * FROM table_truncate_t1 order by a;
+DROP TABLE table_truncate_t1;
+
+--source suite/sequoiadb_query/include/uninstall_sequoiadb.inc

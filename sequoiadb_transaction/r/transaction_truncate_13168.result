@@ -1,0 +1,27 @@
+drop table if exists table_truncate_t1;
+CREATE TABLE table_truncate_t1 (a INT NOT NULL);
+SHOW CREATE TABLE table_truncate_t1;
+Table	Create Table
+table_truncate_t1	CREATE TABLE `table_truncate_t1` (
+  `a` int(11) NOT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+INSERT INTO table_truncate_t1 (a) VALUES (1),(2),(3),(4),(5);
+SELECT * FROM table_truncate_t1 order by a;
+a
+1
+2
+3
+4
+5
+START TRANSACTION;
+TRUNCATE TABLE table_truncate_t1;
+SELECT * FROM table_truncate_t1 order by a;
+a
+INSERT INTO table_truncate_t1 (a) VALUES (1),(2),(3);
+ROLLBACK;
+SELECT * FROM table_truncate_t1 order by a;
+a
+1
+2
+3
+DROP TABLE table_truncate_t1;

@@ -1,0 +1,64 @@
+drop table if exists table_idx_float_t1;
+SET SQL_WARNINGS=1;
+create table table_idx_float_t1 (a float);
+create index a on table_idx_float_t1 (a);
+insert into table_idx_float_t1 values(-3.402823466e+38);
+insert into table_idx_float_t1 values (0.0);
+insert into table_idx_float_t1 values (3.4028);
+insert into table_idx_float_t1 values (3.4028e+30);
+insert into table_idx_float_t1 values (3.40e+37);
+insert into table_idx_float_t1 values (3.402823466351e+38);
+insert into table_idx_float_t1 values ();
+insert into table_idx_float_t1 values (3.402823468e+138);
+ERROR 22003: Out of range value for column 'a' at row 1
+select * from table_idx_float_t1 order by a;
+a
+NULL
+-3.40282e38
+0
+3.4028
+3.4028e30
+3.4e37
+3.40282e38
+select a from table_idx_float_t1 where a = 0;
+a
+0
+select a from table_idx_float_t1 where a >= 0 order by a;
+a
+0
+3.4028
+3.4028e30
+3.4e37
+3.40282e38
+select a from table_idx_float_t1 where a <= 0 order by a;
+a
+-3.40282e38
+0
+select * from table_idx_float_t1 where a between 0 and 3.4028e+30 order by a;
+a
+0
+3.4028
+select * from table_idx_float_t1 where a is null;
+a
+NULL
+select * from table_idx_float_t1 where a != 0  order by a;
+a
+-3.40282e38
+3.4028
+3.4028e30
+3.4e37
+3.40282e38
+select * from table_idx_float_t1 where a <> 0 order by a;
+a
+-3.40282e38
+3.4028
+3.4028e30
+3.4e37
+3.40282e38
+select * from table_idx_float_t1 where a > -3.402823468e+138 order by a limit 2;
+a
+-3.40282e38
+0
+select * from table_idx_float_t1 where a < 3.402823468e+138 order by a limit 3 offset 3;
+a
+drop table table_idx_float_t1;

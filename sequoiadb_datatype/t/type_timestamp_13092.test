@@ -1,0 +1,433 @@
+#
+# Test timestamp
+#
+
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_timestamp_t1,table_timestamp_t2,table_timestamp_t3,table_timestamp_t4;
+--enable_warnings
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+# Set timezone to GMT-3, to make it possible to use "interval 3 hour"
+set time_zone="+03:00";
+
+SET TIMESTAMP=1234;
+CREATE TABLE table_timestamp_t1 (value TEXT NOT NULL, id VARCHAR(32) NOT NULL, stamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+INSERT INTO table_timestamp_t1 VALUES ("my value", "myKey","1999-04-02 00:00:00");
+SELECT stamp FROM table_timestamp_t1 WHERE id="myKey";
+UPDATE table_timestamp_t1 SET value="my value" WHERE id="myKey";
+SELECT stamp FROM table_timestamp_t1 WHERE id="myKey";
+UPDATE table_timestamp_t1 SET id="myKey" WHERE value="my value";
+SELECT stamp FROM table_timestamp_t1 WHERE id="myKey";
+drop table table_timestamp_t1;
+
+create table table_timestamp_t1 (a timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+insert into table_timestamp_t1 values (now());
+select date_format(a,"%Y %y"),year(a),year(now()) from table_timestamp_t1;
+drop table table_timestamp_t1;
+
+create table table_timestamp_t1 (ix timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+insert into table_timestamp_t1 values (19991101000000),(19990102030405),(19990630232922),(19990601000000),(19990930232922),(19990531232922),(19990501000000),(19991101000000),(19990501000000);
+select ix+0 from table_timestamp_t1 order by ix;
+truncate table table_timestamp_t1;
+insert into table_timestamp_t1 values ("19991101000000"),("19990102030405"),("19990630232922"),("19990601000000");
+select ix+0 from table_timestamp_t1 order by ix;
+drop table table_timestamp_t1;
+
+CREATE TABLE table_timestamp_t1 (date date, date_time datetime, time_stamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+INSERT INTO table_timestamp_t1 VALUES ("1998-12-31","1998-12-31 23:59:59",19981231235959);
+INSERT INTO table_timestamp_t1 VALUES ("1999-01-01","1999-01-01 00:00:00",19990101000000);
+INSERT INTO table_timestamp_t1 VALUES ("1999-09-09","1999-09-09 23:59:59",19990909235959);
+INSERT INTO table_timestamp_t1 VALUES ("2000-01-01","2000-01-01 00:00:00",20000101000000);
+INSERT INTO table_timestamp_t1 VALUES ("2000-02-28","2000-02-28 00:00:00",20000228000000);
+INSERT INTO table_timestamp_t1 VALUES ("2000-02-29","2000-02-29 00:00:00",20000229000000);
+INSERT INTO table_timestamp_t1 VALUES ("2000-03-01","2000-03-01 00:00:00",20000301000000);
+INSERT INTO table_timestamp_t1 VALUES ("2000-12-31","2000-12-31 23:59:59",20001231235959);
+INSERT INTO table_timestamp_t1 VALUES ("2001-01-01","2001-01-01 00:00:00",20010101000000);
+INSERT INTO table_timestamp_t1 VALUES ("2004-12-31","2004-12-31 23:59:59",20041231235959);
+INSERT INTO table_timestamp_t1 VALUES ("2005-01-01","2005-01-01 00:00:00",20050101000000);
+INSERT INTO table_timestamp_t1 VALUES ("2030-01-01","2030-01-01 00:00:00",20300101000000);
+# The following will get you an different answer on 64 bit machines
+#INSERT INTO table_timestamp_t1 VALUES ("2050-01-01","2050-01-01 00:00:00",20500101000000);
+SELECT * FROM table_timestamp_t1 order by time_stamp;
+drop table table_timestamp_t1;
+
+#
+# Let us check if we properly treat wrong datetimes and produce proper warnings
+# (for both strings and numbers)
+#
+create table table_timestamp_t1 (ix timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+insert into table_timestamp_t1 values (0),(20030101010160),(20030101016001),(20030101240101),(20030132010101),(20031301010101),(20031200000000),(20030000000000);
+select ix+0 from table_timestamp_t1;
+truncate table table_timestamp_t1;
+insert into table_timestamp_t1 values ("00000000000000"),("20030101010160"),("20030101016001"),("20030101240101"),("20030132010101"),("20031301010101"),("20031200000000"),("20030000000000");
+select ix+0 from table_timestamp_t1 order by ix;
+truncate table table_timestamp_t1;
+insert into table_timestamp_t1 values ("0000-00-00 00:00:00 some trailer"),("2003-01-01 00:00:00 some trailer");
+select ix+0 from table_timestamp_t1 order by ix;
+drop table table_timestamp_t1;
+
+# Also we will test behaviour of TIMESTAMP field in SHOW CREATE TABLE and
+# behaviour of DEFAULT literal for such fields
+create table table_timestamp_t1 (table_timestamp_t1 timestamp not null default now(), table_timestamp_t2 datetime, table_timestamp_t3 timestamp NOT NULL DEFAULT '0000-00-00 00:00:00');
+SET TIMESTAMP=1000000002;
+insert into table_timestamp_t1 values ();
+SET TIMESTAMP=1000000003;
+update table_timestamp_t1 set table_timestamp_t2=now();
+SET TIMESTAMP=1000000003;
+insert into table_timestamp_t1 (table_timestamp_t1,table_timestamp_t3) values (default, default);
+select * from table_timestamp_t1 order by table_timestamp_t1;
+
+show create table table_timestamp_t1;
+show columns from table_timestamp_t1;
+drop table table_timestamp_t1;
+
+create table table_timestamp_t1 (table_timestamp_t1 timestamp not null default '2003-01-01 00:00:00' on update now(), table_timestamp_t2 datetime);
+SET TIMESTAMP=1000000004;
+insert into table_timestamp_t1 values ();
+select * from table_timestamp_t1 order by table_timestamp_t1;
+SET TIMESTAMP=1000000005;
+update table_timestamp_t1 set table_timestamp_t2=now();
+SET TIMESTAMP=1000000005;
+insert into table_timestamp_t1 (table_timestamp_t1) values (default);
+select * from table_timestamp_t1 order by table_timestamp_t1;
+
+show create table table_timestamp_t1;
+show columns from table_timestamp_t1;
+drop table table_timestamp_t1;
+
+create table table_timestamp_t1 (table_timestamp_t1 timestamp not null default now() on update now(), table_timestamp_t2 datetime);
+SET TIMESTAMP=1000000006;
+insert into table_timestamp_t1 values ();
+select * from table_timestamp_t1 order by table_timestamp_t1;
+SET TIMESTAMP=1000000007;
+update table_timestamp_t1 set table_timestamp_t2=now();
+SET TIMESTAMP=1000000007;
+insert into table_timestamp_t1 (table_timestamp_t1) values (default);
+select * from table_timestamp_t1 order by table_timestamp_t1;
+
+show create table table_timestamp_t1;
+show columns from table_timestamp_t1;
+drop table table_timestamp_t1;
+
+create table table_timestamp_t1 (table_timestamp_t1 timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, table_timestamp_t2 datetime, table_timestamp_t3 timestamp NOT NULL DEFAULT '0000-00-00 00:00:00');
+SET TIMESTAMP=1000000007;
+insert into table_timestamp_t1 values ();
+select * from table_timestamp_t1 order by table_timestamp_t1;
+SET TIMESTAMP=1000000008;
+update table_timestamp_t1 set table_timestamp_t2=now();
+SET TIMESTAMP=1000000008;
+insert into table_timestamp_t1 (table_timestamp_t1,table_timestamp_t3) values (default, default);
+select * from table_timestamp_t1 order by table_timestamp_t1;
+
+show create table table_timestamp_t1;
+show columns from table_timestamp_t1;
+drop table table_timestamp_t1;
+
+# Let us test if CURRENT_TIMESTAMP also works well as default value
+# (Of course NOW and CURRENT_TIMESTAMP are same for parser but still just
+# for demonstartion.)
+create table table_timestamp_t1 (table_timestamp_t1 timestamp not null default current_timestamp on update current_timestamp, table_timestamp_t2 datetime);
+SET TIMESTAMP=1000000009;
+insert into table_timestamp_t1 values ();
+select * from table_timestamp_t1 order by table_timestamp_t1;
+SET TIMESTAMP=1000000010;
+update table_timestamp_t1 set table_timestamp_t2=now();
+SET TIMESTAMP=1000000011;
+insert into table_timestamp_t1 (table_timestamp_t1) values (default);
+select * from table_timestamp_t1 order by table_timestamp_t1;
+
+show create table table_timestamp_t1;
+show columns from table_timestamp_t1;
+truncate table table_timestamp_t1;
+
+# Update statement that explicitly sets field should not auto-set it. 
+insert into table_timestamp_t1 values ('2004-04-01 00:00:00', '2004-04-01 00:00:00');
+SET TIMESTAMP=1000000012;
+update table_timestamp_t1 set table_timestamp_t1= '2004-04-02 00:00:00';
+select * from table_timestamp_t1 order by table_timestamp_t1;
+# The same for multi updates
+update table_timestamp_t1 as ta, table_timestamp_t1 as tb set tb.table_timestamp_t1= '2004-04-03 00:00:00';
+select * from table_timestamp_t1 order by table_timestamp_t1;
+drop table table_timestamp_t1;
+
+# Now let us test replace it should behave exactly like delete+insert
+# Case where optimization is possible DEFAULT = ON UPDATE
+create table table_timestamp_t1 (pk int primary key, table_timestamp_t1 timestamp not null default current_timestamp on update current_timestamp, bulk int);
+insert into table_timestamp_t1 values (1, '2004-04-01 00:00:00', 10);
+SET TIMESTAMP=1000000013;
+select * from table_timestamp_t1 order by pk;
+drop table table_timestamp_t1;
+# Case in which there should not be optimisation
+create table table_timestamp_t1 (pk int primary key, table_timestamp_t1 timestamp not null default '2003-01-01 00:00:00' on update current_timestamp, bulk int);
+insert into table_timestamp_t1 values (1, '2004-04-01 00:00:00', 10);
+SET TIMESTAMP=1000000014;
+select * from table_timestamp_t1 order by pk;
+drop table table_timestamp_t1;
+# Other similar case
+create table table_timestamp_t1 (pk int primary key, table_timestamp_t1 timestamp not null default current_timestamp on update current_timestamp, bulk int);
+insert into table_timestamp_t1 values (1, '2004-04-01 00:00:00', 10);
+SET TIMESTAMP=1000000015;
+select * from table_timestamp_t1 order by pk;
+drop table table_timestamp_t1;
+
+# Let us test alter now
+create table table_timestamp_t1 (table_timestamp_t1 timestamp not null default current_timestamp on update current_timestamp);
+insert into table_timestamp_t1 values ('2004-04-01 00:00:00');
+SET TIMESTAMP=1000000016;
+select * from table_timestamp_t1 order by table_timestamp_t1;
+drop table table_timestamp_t1;
+
+#
+# Test for TIMESTAMP columns which are able to store NULLs
+#
+
+# Unlike for default TIMESTAMP fields we don't interpret first field
+# in this table as TIMESTAMP with DEFAULT NOW() ON UPDATE NOW() properties.
+create table table_timestamp_t1 (a timestamp null, b timestamp null);
+
+show create table table_timestamp_t1;
+insert into table_timestamp_t1 values (NULL, NULL);
+SET TIMESTAMP=1000000017;
+insert into table_timestamp_t1 values ();
+select * from table_timestamp_t1 order by a;
+drop table table_timestamp_t1;
+
+# But explicit auto-set properties still should be OK.
+create table table_timestamp_t1 (a timestamp null default current_timestamp on update current_timestamp, b timestamp null);
+
+show create table table_timestamp_t1;
+insert into table_timestamp_t1 values (NULL, NULL);
+SET TIMESTAMP=1000000018;
+insert into table_timestamp_t1 values ();
+select * from table_timestamp_t1 order by a;
+drop table table_timestamp_t1;
+
+# It is also OK to specify NULL as default explicitly for such fields.
+# This is also a test for bug #2464, DEFAULT keyword in INSERT statement
+# should return default value for column.
+
+create table table_timestamp_t1 (a timestamp null default null, b timestamp null default '2003-01-01 00:00:00');
+
+show create table table_timestamp_t1;
+insert into table_timestamp_t1 values (NULL, NULL);
+insert into table_timestamp_t1 values (DEFAULT, DEFAULT);
+select * from table_timestamp_t1 order by a;
+drop table table_timestamp_t1;
+
+#
+# Test for bug #4131, TIMESTAMP columns missing minutes and seconds when
+# using GROUP BY in @@new=1 mode.
+#
+create table table_timestamp_t1 (a char(2), t timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+insert into table_timestamp_t1 values ('a', '2004-01-01 00:00:00'), ('a', '2004-01-01 01:00:00'),
+                      ('b', '2004-02-01 00:00:00');
+select max(t) from table_timestamp_t1 group by a;
+drop table table_timestamp_t1;
+
+#
+# Test for bug #7418 "TIMESTAMP not always converted to DATETIME in MAXDB
+# mode". TIMESTAMP columns should be converted DATETIME columns in MAXDB
+# mode regardless of whether a display width is given.
+#
+set sql_mode='maxdb';
+create table table_timestamp_t1 (a timestamp, b timestamp);
+
+show create table table_timestamp_t1;
+# restore default mode
+set sql_mode='';
+drop table table_timestamp_t1;
+
+#
+# Bug#7806 - insert on duplicate key and auto-update of timestamp
+#
+create table table_timestamp_t1 (a int primary key, b int, c timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+insert into table_timestamp_t1 (a, b, c) values (1, 0, '2001-01-01 01:01:01'),
+  (2, 0, '2002-02-02 02:02:02'), (3, 0, '2003-03-03 03:03:03');
+select * from table_timestamp_t1 order by a;
+update table_timestamp_t1 set b = 2, c = c where a = 2;
+select * from table_timestamp_t1 order by a;
+insert into table_timestamp_t1 (a) values (4);
+select * from table_timestamp_t1 order by a;
+update table_timestamp_t1 set c = '2004-04-04 04:04:04' where a = 4;
+select * from table_timestamp_t1 order by a;
+drop table table_timestamp_t1;
+
+--echo End of 4.1 tests
+
+# Restore timezone to default
+set time_zone= @@global.time_zone;
+
+CREATE TABLE table_timestamp_t1 (
+`id` int(11) NOT NULL ,
+`username` varchar(80) NOT NULL default '',
+`posted_on` timestamp NOT NULL default '0000-00-00 00:00:00',
+PRIMARY KEY (`id`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
+
+show fields from table_timestamp_t1;
+select is_nullable from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='table_timestamp_t1' and COLUMN_NAME='posted_on';
+drop table table_timestamp_t1;
+
+#
+# Bug#41370: TIMESTAMP field does not accepts NULL from FROM_UNIXTIME()
+#
+
+CREATE TABLE table_timestamp_t1 ( f1 INT(11) NOT NULL PRIMARY KEY,
+        f2 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        f3 TIMESTAMP NOT NULL default '0000-00-00 00:00:00');
+INSERT INTO table_timestamp_t1 (f2,f3) VALUES (NOW(), "0000-00-00 00:00:00");
+UPDATE table_timestamp_t1 SET f2=NOW(), f3=FROM_UNIXTIME('9999999999') WHERE f1=1;
+SELECT f1,f2-f3 FROM table_timestamp_t1 order by f1;
+DROP TABLE table_timestamp_t1;
+
+--echo End of 5.0 tests
+
+--echo #
+--echo # Bug #55779: select does not work properly in mysql server
+--echo #             Version "5.1.42 SUSE MySQL RPM"
+--echo #
+
+CREATE TABLE table_timestamp_t1 (a TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+
+INSERT INTO table_timestamp_t1 VALUES ('2000-01-01 00:00:00'), ('2000-01-01 00:00:00'),
+                      ('2000-01-01 00:00:01'), ('2000-01-01 00:00:01');
+
+SELECT a FROM table_timestamp_t1 WHERE a >=  20000101000000 order by a;
+SELECT a FROM table_timestamp_t1 WHERE a >= '20000101000000' order by a;
+
+DROP TABLE table_timestamp_t1;
+
+--echo #
+--echo # Bug#50774: failed to get the correct resultset when timestamp values 
+--echo # are appended with .0
+--echo #
+CREATE TABLE table_timestamp_t1 ( a TIMESTAMP);
+
+INSERT INTO table_timestamp_t1 VALUES( '2010-02-01 09:31:01' );
+INSERT INTO table_timestamp_t1 VALUES( '2010-02-01 09:31:02' );
+INSERT INTO table_timestamp_t1 VALUES( '2010-02-01 09:31:03' );
+INSERT INTO table_timestamp_t1 VALUES( '2010-02-01 09:31:04' );
+
+SELECT * FROM table_timestamp_t1 WHERE a >= '2010-02-01 09:31:02.0' order by a;
+SELECT * FROM table_timestamp_t1 WHERE '2010-02-01 09:31:02.0' <= a order by a;
+SELECT * FROM table_timestamp_t1 WHERE a <= '2010-02-01 09:31:02.0' order by a;
+SELECT * FROM table_timestamp_t1 WHERE '2010-02-01 09:31:02.0' >= a order by a;
+
+--replace_column 1 x 2 x 3 x 6 x 7 x 8 x 9 x 10 x 12 x
+EXPLAIN
+SELECT * FROM table_timestamp_t1 WHERE a >= '2010-02-01 09:31:02.0' order by a;
+SELECT * FROM table_timestamp_t1 WHERE a >= '2010-02-01 09:31:02.0' order by a;
+
+CREATE TABLE table_timestamp_t2 ( a TIMESTAMP);
+
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:01' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:02' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:03' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:04' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:05' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:06' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:07' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:08' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:09' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:10' );
+INSERT INTO table_timestamp_t2 VALUES( '2010-02-01 09:31:11' );
+
+--echo # The bug would cause the range optimizer's comparison to use an open
+--echo # interval here. This reveals itself only in the number of reads 
+--echo # performed.
+FLUSH STATUS;
+--replace_column 1 x 2 x 3 x 6 x 7 x 8 x 9 x 10 x 12 x
+EXPLAIN
+SELECT * FROM table_timestamp_t2 WHERE a < '2010-02-01 09:31:02.0' order by a;
+SELECT * FROM table_timestamp_t2 WHERE a < '2010-02-01 09:31:02.0' order by a;
+SHOW STATUS LIKE 'Handler_read_next';
+
+DROP TABLE table_timestamp_t1, table_timestamp_t2;
+
+--echo End of 5.1 tests
+
+--echo
+--echo Bug#50888 valgrind warnings in Field_timestamp::val_str
+--echo
+
+SET TIMESTAMP=0;
+CREATE TABLE table_timestamp_t1(a timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+INSERT INTO table_timestamp_t1 VALUES ('2008-02-23 09:23:45'), ('2010-03-05 11:08:02');
+FLUSH TABLES table_timestamp_t1;
+SELECT MAX(a) FROM table_timestamp_t1 order by a;
+SELECT a FROM table_timestamp_t1 order by a;
+DROP TABLE table_timestamp_t1;
+
+--echo End of Bug#50888
+
+--echo #
+--echo # Bug59330: Incorrect result when comparing an aggregate
+--echo #           function with TIMESTAMP
+--echo #
+CREATE TABLE table_timestamp_t1 (dt DATETIME, ts TIMESTAMP);
+INSERT INTO table_timestamp_t1 VALUES('2011-01-06 12:34:30', '2011-01-06 12:34:30');
+SELECT MAX(dt), MAX(ts) FROM table_timestamp_t1;
+SELECT MAX(ts) < '2010-01-01 00:00:00' FROM table_timestamp_t1;
+SELECT MAX(dt) < '2010-01-01 00:00:00' FROM table_timestamp_t1;
+SELECT MAX(ts) > '2010-01-01 00:00:00' FROM table_timestamp_t1;
+SELECT MAX(dt) > '2010-01-01 00:00:00' FROM table_timestamp_t1;
+SELECT MAX(ts) = '2011-01-06 12:34:30' FROM table_timestamp_t1;
+SELECT MAX(dt) = '2011-01-06 12:34:30' FROM table_timestamp_t1;
+DROP TABLE table_timestamp_t1;
+
+--disable_warnings
+DROP TABLE IF EXISTS table_timestamp_t1, table_timestamp_t2, table_timestamp_t3;
+--enable_warnings
+SET @org_mode=@@sql_mode;
+
+--echo #Table creation in strict mode
+SET @@sql_mode='NO_ZERO_DATE,STRICT_ALL_TABLES';
+--error ER_INVALID_DEFAULT
+CREATE TABLE table_timestamp_t1 (c1 TIMESTAMP DEFAULT 0);
+--error ER_INVALID_DEFAULT
+CREATE TABLE table_timestamp_t1 (c1 TIMESTAMP DEFAULT '0000-00-00 00:00:00');
+--error ER_INVALID_DEFAULT
+CREATE TABLE table_timestamp_t1 (c1 TIMESTAMP DEFAULT '2012-02-00 12:12:12');
+
+--echo #Table creation in non-strict mode but with NO_ZERO_DATE/NO_ZERO_IN_DATE
+SET @@sql_mode='NO_ZERO_DATE';
+CREATE TABLE table_timestamp_t1 (c1 TIMESTAMP DEFAULT 0);
+CREATE TABLE table_timestamp_t2 (c1 TIMESTAMP DEFAULT '0000-00-00 00:00:00');
+SET @@sql_mode='NO_ZERO_IN_DATE';
+CREATE TABLE table_timestamp_t3 (c1 TIMESTAMP DEFAULT '2012-02-00 12:12:12');
+DROP TABLE table_timestamp_t1, table_timestamp_t2, table_timestamp_t3;
+
+--echo #Table creation with out any SQL modes
+SET @@sql_mode='';
+CREATE TABLE table_timestamp_t1 (c1 TIMESTAMP DEFAULT 0);
+CREATE TABLE table_timestamp_t2 (c1 TIMESTAMP DEFAULT '0000-00-00 00:00:00');
+CREATE TABLE table_timestamp_t3 (c1 TIMESTAMP DEFAULT '2012-02-00 12:12:12');
+DROP TABLE table_timestamp_t1, table_timestamp_t2, table_timestamp_t3;
+SET @@sql_mode= default;
+
+# Remark
+# Add range change
+# create table and insert
+create table table_timestamp_t1 (a timestamp);
+insert into table_timestamp_t1 values ('1970-01-01 10:00:00');
+insert into table_timestamp_t1 values ('2000-01-01 00:00:01');
+insert into table_timestamp_t1 values ('2038-01-01 11:00:00');
+--error 1292
+insert into table_timestamp_t1 values ('abcd');
+--error 1292
+insert into table_timestamp_t1 values ('2039-01-11 01:00:00');
+--error 1292
+insert into table_timestamp_t1 values ('1940-01-11 01:00:00');
+select * from table_timestamp_t1 order by a;
+# update
+update table_timestamp_t1 set a = '2018-01-01 00:00:01' where a = '2000-01-01 00:00:01';
+# select 
+select * from table_timestamp_t1 order by a;
+# delete
+delete from table_timestamp_t1 where a = '2000-01-01 00:00:01';
+# select
+select * from table_timestamp_t1 order by a;
+drop table table_timestamp_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc

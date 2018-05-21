@@ -1,0 +1,30 @@
+drop table if exists table_tiny_t1;
+SET SQL_WARNINGS=1;
+create table table_tiny_t1 (a tinyint, b tinyint unsigned);
+insert into table_tiny_t1 values (-128,0);
+insert into table_tiny_t1 values (0,0);
+insert into table_tiny_t1 values (127,255);
+insert into table_tiny_t1 values ('abc','abc');
+ERROR HY000: Incorrect integer value: 'abc' for column 'a' at row 1
+insert into table_tiny_t1 values (-129,0);
+ERROR 22003: Out of range value for column 'a' at row 1
+insert into table_tiny_t1 values (0,256);
+ERROR 22003: Out of range value for column 'b' at row 1
+select * from table_tiny_t1 order by a;
+a	b
+-128	0
+0	0
+127	255
+update table_tiny_t1 set a = -1 where a >= 0 and b > 0;
+select * from table_tiny_t1 order by a;
+a	b
+-128	0
+-1	255
+0	0
+delete from table_tiny_t1 where a > 0;
+select * from table_tiny_t1 order by a;
+a	b
+-128	0
+-1	255
+0	0
+drop table table_tiny_t1;

@@ -1,0 +1,214 @@
+#
+# Test where with in
+# Initialise
+--source suite/sequoiadb_query/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_in_t1, table_in_t2;
+--enable_warnings
+
+# create table
+CREATE TABLE table_in_t1 (a int, b int, c int);
+insert into table_in_t1 values (1,2,3), (1,NULL,3);
+select 1 in (a,b,c) from table_in_t1 order by a;
+select 3 in (a,b,c) from table_in_t1 order by a;
+select 10 in (a,b,c) from table_in_t1 order by a;
+select NULL in (a,b,c) from table_in_t1 order by a;
+drop table table_in_t1;
+
+CREATE TABLE table_in_t1 (a float, b float, c float);
+insert into table_in_t1 values (1.5,2.5,3.5), (1.5,NULL,3.5);
+select 1.5 in (a,b,c) from table_in_t1 order by a;
+select 3.5 in (a,b,c) from table_in_t1 order by a;
+select 10.5 in (a,b,c) from table_in_t1 order by a;
+drop table table_in_t1;
+
+CREATE TABLE table_in_t1 (a varchar(10), b varchar(10), c varchar(10));
+insert into table_in_t1 values ('A','BC','EFD'), ('A',NULL,'EFD');
+select 'A' in (a,b,c) from table_in_t1 order by a;
+select 'EFD' in (a,b,c) from table_in_t1 order by a;
+select 'XSFGGHF' in (a,b,c) from table_in_t1 order by a;
+drop table table_in_t1;
+
+CREATE TABLE table_in_t1 (field char(1));
+INSERT INTO table_in_t1 VALUES ('A'),(NULL);
+SELECT * from table_in_t1 WHERE field IN (NULL);
+SELECT * from table_in_t1 WHERE field NOT IN (NULL);
+DELETE FROM table_in_t1 WHERE field NOT IN (NULL);
+SELECT * FROM table_in_t1;
+drop table table_in_t1;
+
+create table table_in_t1 (id int(10) primary key);
+insert into table_in_t1 values (1),(2),(3),(4),(5),(6),(7),(8),(9);
+select * from table_in_t1 where id in (2,5,9) order by id;
+drop table table_in_t1;
+
+create table table_in_t1 (
+a char(1) character set latin1 collate latin1_general_ci,
+b char(1) character set latin1 collate latin1_swedish_ci,
+c char(1) character set latin1 collate latin1_danish_ci
+);
+insert into table_in_t1 values ('A','B','C');
+insert into table_in_t1 values ('a','c','c');
+--error 1267
+select * from table_in_t1 where a in (b);
+--error 1270
+select * from table_in_t1 where a in (b,c);
+--error 1271
+select * from table_in_t1 where 'a' in (a,b,c) order by a;
+select * from table_in_t1 where 'a' in (a) order by a;
+select * from table_in_t1 where a in ('a') order by a;
+select * from table_in_t1 where 'a' collate latin1_general_ci in (a,b,c) order by a;
+select * from table_in_t1 where 'a' collate latin1_bin in (a,b,c) order by a;
+select * from table_in_t1 where 'a' in (a,b,c collate latin1_bin) order by a;
+drop table table_in_t1;
+
+set names utf8;
+create table table_in_t1 (a char(10) character set utf8 not null);
+insert into table_in_t1 values ('bbbb'),(_koi8r'√√√√'),(_latin1'ƒƒƒƒ');
+select a from table_in_t1 where a in ('bbbb',_koi8r'√√√√',_latin1'ƒƒƒƒ') order by a;
+drop table table_in_t1;
+# Bug#7834 Illegal mix of collations in IN operator
+create table table_in_t1 (a char(10) character set latin1 not null);
+insert into table_in_t1 values ('a'),('b'),('c');
+select a from table_in_t1 where a IN ('a','b','c') order by a;
+drop table table_in_t1;
+set names latin1;
+
+#
+# The problem was in the IN() function that ignored maybe_null flags
+# of all arguments except the first (the one _before_ the IN
+# keyword, '1' in the test case below).
+#
+--disable_warnings
+DROP TABLE IF EXISTS table_in_t1;
+--enable_warnings
+
+#
+# Bug #11885: WHERE condition with NOT IN (one element)          
+#             
+CREATE TABLE table_in_t1 (a int PRIMARY KEY);
+INSERT INTO table_in_t1 VALUES (44), (45), (46);
+
+SELECT * FROM table_in_t1 WHERE a IN (45);
+SELECT * FROM table_in_t1 WHERE a NOT IN (0, 45);
+SELECT * FROM table_in_t1 WHERE a NOT IN (45);
+
+CREATE VIEW v1 AS SELECT * FROM table_in_t1 WHERE a NOT IN (45);
+SHOW CREATE VIEW v1;
+SELECT * FROM v1; 
+
+DROP VIEW v1;
+DROP TABLE table_in_t1;
+
+# BUG#15872: Excessive memory consumption of range analysis of NOT IN
+create table table_in_t1 (a int);
+insert into table_in_t1 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9); 
+create table table_in_t2 (a int, filler char(200), key(a));
+
+insert into table_in_t2 select C.a*2,   'no'  from table_in_t1 A, table_in_t1 B, table_in_t1 C;
+insert into table_in_t2 select C.a*2+1, 'yes' from table_in_t1 C;
+
+select * from table_in_t2 where a NOT IN (0, 2,4,6,8,10,12,14,16,18) order by a;
+select * from table_in_t2 where a NOT IN (0, 2,4,6,8,10,12,14,16,18) order by a;
+select * from table_in_t2 force index(a) where a NOT IN (2,2,2,2,2,2) order by a;
+
+drop table table_in_t2;
+
+#
+# Repeat the test for DATETIME
+#
+create table table_in_t2 (a datetime, filler char(200));
+
+insert into table_in_t2 select '2006-04-25 10:00:00' + interval C.a minute,
+               'no'  from table_in_t1 A, table_in_t1 B, table_in_t1 C where C.a % 2 = 0;
+
+insert into table_in_t2 select '2006-04-25 10:00:00' + interval C.a*2+1 minute,
+               'yes' from table_in_t1 C;
+
+select * from table_in_t2 where a NOT IN (
+  '2006-04-25 10:00:00','2006-04-25 10:02:00','2006-04-25 10:04:00', 
+  '2006-04-25 10:06:00', '2006-04-25 10:08:00') order by a;
+drop table table_in_t2;
+
+#
+# Repeat the test for CHAR(N)
+#
+create table table_in_t2 (a varchar(10), filler char(200), key(a));
+
+insert into table_in_t2 select 'foo', 'no' from table_in_t1 A, table_in_t1 B;
+insert into table_in_t2 select 'barbar', 'no' from table_in_t1 A, table_in_t1 B;
+insert into table_in_t2 select 'bazbazbaz', 'no' from table_in_t1 A, table_in_t1 B;
+
+insert into table_in_t2 values ('fon', '1'), ('fop','1'), ('barbaq','1'), 
+  ('barbas','1'), ('bazbazbay', '1'),('zz','1');
+
+select * from table_in_t2 where a not in('foo','barbar', 'bazbazbaz') order by a;
+drop table table_in_t2;
+
+#
+# Repeat for DECIMAL
+#
+create table table_in_t2 (a decimal(10,5), filler char(200));
+
+insert into table_in_t2 select 345.67890, 'no' from table_in_t1 A, table_in_t1 B;
+insert into table_in_t2 select 43245.34, 'no' from table_in_t1 A, table_in_t1 B;
+insert into table_in_t2 select 64224.56344, 'no' from table_in_t1 A, table_in_t1 B;
+
+insert into table_in_t2 values (0, '1'), (22334.123,'1'), (33333,'1'), 
+  (55555,'1'), (77777, '1');
+
+select * from table_in_t2 where a not in (345.67890, 43245.34, 64224.56344) order by a;
+select * from table_in_t2 where a not in (345.67890, 43245.34, 64224.56344) order by a;
+drop table table_in_t1,table_in_t2;
+
+# BUG#19618: Crash in range optimizer for 
+#   "unsigned_keypart NOT IN(negative_number,...)" 
+#   (introduced in fix BUG#15872) 
+create table table_in_t1 (
+  some_id smallint(5) unsigned,
+  key (some_id)
+);
+insert into table_in_t1 values (1),(2);
+select some_id from table_in_t1 where some_id not in(2,-1) order by some_id;
+select some_id from table_in_t1 where some_id not in(-4,-1,-4) order by some_id;
+select some_id from table_in_t1 where some_id not in(-4,-1,3423534,2342342) order by some_id;
+
+#
+# BUG#24261: crash when WHERE contains NOT IN ('<negative value>') for unsigned column type
+#
+select some_id from table_in_t1 where some_id not in('-1', '0') order by some_id;
+drop table table_in_t1;
+
+#
+# Bug#18360: Type aggregation for IN and CASE may lead to a wrong result 
+#
+create table table_in_t1(f1 char(1));
+insert into table_in_t1 values ('a'),('b'),('1');
+select f1 from table_in_t1 where f1 in ('a',1) order by f1;
+select f1, case f1 when 'a' then '+' when 1 then '-' end from table_in_t1 order by f1;
+create index table_in_t1f1_idx on table_in_t1(f1);
+select f1 from table_in_t1 where f1 in ('a',1) order by f1;
+select f1 from table_in_t1 where f1 in ('a','b') order by f1;
+select f1 from table_in_t1 where f1 in (2,1) order by f1;
+drop table table_in_t1;
+
+#
+# Bug #31075: crash in get_func_mm_tree
+#
+
+create table table_in_t1 (a time);
+insert into table_in_t1 values (),(),(),(),(),(),(),(),(),();
+select a from table_in_t1 where a not in (a,a,a) group by a;
+drop table table_in_t1;
+
+#
+# Bug #37761: IN handles NULL differently for table-subquery and value-list
+#
+
+create table table_in_t1 (id int);
+select * from table_in_t1 where NOT id in (select null union all select 1);
+select * from table_in_t1 where NOT id in (null, 1);
+drop table table_in_t1;
+
+--source suite/sequoiadb_query/include/uninstall_sequoiadb.inc

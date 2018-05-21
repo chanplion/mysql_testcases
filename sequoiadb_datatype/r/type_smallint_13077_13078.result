@@ -1,0 +1,27 @@
+drop table if exists table_sint_t1;
+SET SQL_WARNINGS=1;
+create table table_sint_t1 (a smallint, b smallint unsigned);
+insert into table_sint_t1 values (-32768,0);
+insert into table_sint_t1 values (0,0);
+insert into table_sint_t1 values (32767,65535);
+insert into table_sint_t1 values ('abcd','abcd');
+ERROR HY000: Incorrect integer value: 'abcd' for column 'a' at row 1
+insert into table_sint_t1 values (-32769,0);
+ERROR 22003: Out of range value for column 'a' at row 1
+insert into table_sint_t1 values (0,65536);
+ERROR 22003: Out of range value for column 'b' at row 1
+select * from table_sint_t1 order by a;
+a	b
+-32768	0
+0	0
+32767	65535
+update table_sint_t1 set a = -999 where a >= 0 and b > 0;
+select * from table_sint_t1 order by a;
+a	b
+-32768	0
+-999	65535
+0	0
+delete from table_sint_t1 where b >= 0;
+select * from table_sint_t1 order by b;
+a	b
+drop table table_sint_t1;

@@ -1,0 +1,75 @@
+drop table if exists table_transcomit_t1;
+CREATE TABLE table_transcomit_t1 (a INT);
+SHOW CREATE TABLE table_transcomit_t1;
+Table	Create Table
+table_transcomit_t1	CREATE TABLE `table_transcomit_t1` (
+  `a` int(11) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+START TRANSACTION;
+INSERT INTO table_transcomit_t1 VALUES (1),(2);
+COMMIT;
+SELECT * FROM table_transcomit_t1 ORDER BY a;
+a
+1
+2
+START TRANSACTION;
+INSERT INTO table_transcomit_t1 VALUES (3),(4);
+ROLLBACK;
+SELECT * FROM table_transcomit_t1 ORDER BY a;
+a
+1
+2
+START TRANSACTION;
+UPDATE table_transcomit_t1 SET a = -1 WHERE a > 1;
+COMMIT;
+SELECT * FROM table_transcomit_t1 WHERE a = -1 ORDER BY a;
+a
+-1
+START TRANSACTION;
+UPDATE table_transcomit_t1 SET a = -99999 WHERE a > 1;
+ROLLBACK;
+SELECT * FROM table_transcomit_t1 WHERE a = -99999 ORDER BY a;
+a
+START TRANSACTION;
+DELETE FROM table_transcomit_t1 WHERE a = -1;
+COMMIT;
+SELECT * FROM table_transcomit_t1 WHERE a = -1 ORDER BY a;
+a
+START TRANSACTION;
+DELETE FROM table_transcomit_t1 WHERE a > 1;
+ROLLBACK;
+SELECT * FROM table_transcomit_t1 ORDER BY a;
+a
+1
+SET @@autocommit=0;
+COMMIT;
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+START TRANSACTION;
+SELECT @@tx_isolation;
+@@tx_isolation
+REPEATABLE-READ
+Should be REPEATABLE READ
+SELECT * FROM table_transcomit_t1;
+a
+1
+SELECT @@tx_isolation;
+@@tx_isolation
+REPEATABLE-READ
+Should be REPEATABLE READ
+INSERT INTO table_transcomit_t1 VALUES (-1);
+SELECT @@tx_isolation;
+@@tx_isolation
+REPEATABLE-READ
+Should be REPEATABLE READ
+COMMIT;
+SET @@autocommit=1;
+COMMIT;
+# 2: DML should be blocked on non-temporary tables.
+START TRANSACTION READ ONLY;
+INSERT INTO table_transcomit_t1 VALUES (1), (2);
+ERROR 25006: Cannot execute statement in a READ ONLY transaction.
+UPDATE table_transcomit_t1 SET a= 3;
+ERROR 25006: Cannot execute statement in a READ ONLY transaction.
+DELETE FROM table_transcomit_t1;
+ERROR 25006: Cannot execute statement in a READ ONLY transaction.
+DROP TABLE table_transcomit_t1;

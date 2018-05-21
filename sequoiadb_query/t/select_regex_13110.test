@@ -1,0 +1,57 @@
+
+#
+# Some regexp tests
+#
+--source suite/sequoiadb_query/include/have_sequoiadb.inc
+set names latin1;
+--source suite/sequoiadb_query/include/ctype_regex.inc
+
+--disable_warnings
+drop table if exists table_regex_t1;
+--enable_warnings
+
+#
+# This test a bug in regexp on Alpha
+#
+
+create table table_regex_t1 (xxx char(128));
+insert into table_regex_t1 (xxx) values('this is a test of some long text to see what happens');
+select * from table_regex_t1 where xxx regexp('is a test of some long text to');
+explain extended select * from table_regex_t1 where xxx regexp('is a test of some long text to');
+select * from table_regex_t1 where xxx regexp('is a test of some long text to ');
+select * from table_regex_t1 where xxx regexp('is a test of some long text to s');
+select * from table_regex_t1 where xxx regexp('is a test of some long text to se');
+drop table table_regex_t1;
+
+create table table_regex_t1 (xxx char(128));
+insert into table_regex_t1 (xxx) values('this is some text: to test - out.reg exp (22/45)');
+select * from table_regex_t1 where xxx REGEXP '^this is some text: to test - out\\.reg exp [[(][0-9]+[/\\][0-9]+[])][ ]*$';
+drop table table_regex_t1;
+
+#
+# regexp cleanup()
+#
+create table table_regex_t1 (a varchar(40));
+insert into table_regex_t1 values ('C1'),('C2'),('R1'),('C3'),('R2'),('R3');
+prepare stmtable_regex_t1 from 'select a from table_regex_t1 where a rlike ? order by a';
+set @a="^C.*";
+execute stmtable_regex_t1 using @a;
+set @a="^R.*";
+execute stmtable_regex_t1 using @a;
+deallocate prepare stmtable_regex_t1;
+drop table table_regex_t1;
+
+#
+# Bug #37337: Function returns different results
+#
+CREATE TABLE table_regex_t1(a INT, b CHAR(4));
+INSERT INTO table_regex_t1 VALUES (1, '6.1'), (1, '7.0'), (1, '8.0');
+PREPARE stmtable_regex_t1 FROM "SELECT a FROM table_regex_t1 WHERE a=1 AND '7.0' REGEXP b LIMIT 1";
+EXECUTE stmtable_regex_t1;
+EXECUTE stmtable_regex_t1;
+EXECUTE stmtable_regex_t1;
+EXECUTE stmtable_regex_t1;
+DEALLOCATE PREPARE stmtable_regex_t1;
+DROP TABLE table_regex_t1;
+
+--source suite/sequoiadb_query/include/uninstall_sequoiadb.inc

@@ -1,0 +1,87 @@
+drop table if exists table_text_t1,table_text_t2;
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+CREATE TABLE table_text_t1 (a text(70000), b tinytext, c mediumtext, d longtext);
+show columns from table_text_t1;
+Field	Type	Null	Key	Default	Extra
+a	mediumtext	YES		NULL	
+b	tinytext	YES		NULL	
+c	mediumtext	YES		NULL	
+d	longtext	YES		NULL	
+insert into table_text_t1 values ('aaaa', 'aaaa', 'aaaa', 'aaaa'), ('bbbb', 'bbbb', 'bbbb', 'bbbb');
+select * from table_text_t1 order by a;
+a	b	c	d
+aaaa	aaaa	aaaa	aaaa
+bbbb	bbbb	bbbb	bbbb
+update table_text_t1 set a = 'newa',b = 'newb', c = 'newc', d = 'newd' where a = 'aaaa';
+select * from table_text_t1 order by a;
+a	b	c	d
+bbbb	bbbb	bbbb	bbbb
+newa	newb	newc	newd
+delete from table_text_t1 where a = 'newa';
+select * from table_text_t1 order by a;
+a	b	c	d
+bbbb	bbbb	bbbb	bbbb
+drop table table_text_t1;
+CREATE TABLE table_text_t2 (a text default "hello");
+ERROR 42000: BLOB, TEXT, GEOMETRY or JSON column 'a' can't have a default value
+drop table if exists table_text_t1,table_text_t2;
+create table table_text_t1 (a text);
+insert into table_text_t1 values ('where');
+update table_text_t1 set a='Where';
+select * from table_text_t1;
+a
+Where
+drop table table_text_t1;
+create table table_text_t1 (a text, unique (a(2100)));
+ERROR 42000: Specified key was too long; max key length is 255 bytes
+create table table_text_t1 (a text, key (a(2100)));
+Warnings:
+Warning	1071	Specified key was too long; max key length is 255 bytes
+show create table table_text_t1;
+Table	Create Table
+table_text_t1	CREATE TABLE `table_text_t1` (
+  `a` text,
+  KEY `a` (`a`(255))
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+drop table table_text_t1;
+CREATE TABLE table_text_t1 (
+f1 int(11) DEFAULT '0' NOT NULL,
+f2 varchar(16) DEFAULT '' NOT NULL,
+f5 text,
+KEY index_name (f1,f2,f5(16))
+);
+INSERT INTO table_text_t1 VALUES (0,'traktor','1111111111111');
+INSERT INTO table_text_t1 VALUES (1,'traktor','1111111111111111111111111');
+select count(*) from table_text_t1 where f2='traktor';
+count(*)
+2
+drop table table_text_t1;
+create table table_text_t1 (a text default '');
+Warnings:
+Warning	1101	BLOB, TEXT, GEOMETRY or JSON column 'a' can't have a default value
+show create table table_text_t1;
+Table	Create Table
+table_text_t1	CREATE TABLE `table_text_t1` (
+  `a` text
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+insert into table_text_t1 values (default);
+select * from table_text_t1;
+a
+NULL
+drop table table_text_t1;
+set @@sql_mode='TRADITIONAL';
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+create table table_text_t1 (a text default '');
+ERROR 42000: BLOB, TEXT, GEOMETRY or JSON column 'a' can't have a default value
+set @@sql_mode='';
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+CREATE TABLE b15776 (a text(4294967296));
+ERROR 42000: Display width out of range for column 'a' (max = 4294967295)
+CREATE TABLE b15776 (a text(999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999));
+ERROR 42000: Display width out of range for column 'a' (max = 4294967295)
+CREATE TABLE b15776 (a char(4294967296));
+ERROR 42000: Display width out of range for column 'a' (max = 4294967295)

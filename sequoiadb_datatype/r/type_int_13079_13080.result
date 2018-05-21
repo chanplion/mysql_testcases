@@ -1,0 +1,27 @@
+drop table if exists table_int_t1;
+SET SQL_WARNINGS=1;
+create table table_int_t1 (a int, b int unsigned);
+insert into table_int_t1 values (-2147483648,0);
+insert into table_int_t1 values (0,0);
+insert into table_int_t1 values (2147483647,4294967295);
+insert into table_int_t1 values ('abcd','abcd');
+ERROR HY000: Incorrect integer value: 'abcd' for column 'a' at row 1
+insert into table_int_t1 values (2147483649,0);
+ERROR 22003: Out of range value for column 'a' at row 1
+insert into table_int_t1 values (0,4294967296);
+ERROR 22003: Out of range value for column 'b' at row 1
+select * from table_int_t1 order by a;
+a	b
+-2147483648	0
+0	0
+2147483647	4294967295
+update table_int_t1 set a = -100000000 where a <= 0 and b >= 0;
+select * from table_int_t1 order by a;
+a	b
+-100000000	0
+-100000000	0
+2147483647	4294967295
+delete from table_int_t1 where b >= 0;
+select * from table_int_t1 order by a;
+a	b
+drop table table_int_t1;

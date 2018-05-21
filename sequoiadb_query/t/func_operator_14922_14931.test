@@ -1,0 +1,94 @@
+
+# Test operator '+ - * /'
+
+--source suite/sequoiadb_query/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_operator_t1;
+--enable_warnings
+
+# create table 
+create table table_operator_t1 (a tinyint, b int, c bigint);
+# insert
+INSERT INTO table_operator_t1 VALUES ( 1, 4, 16776960);
+INSERT INTO table_operator_t1 VALUES ( 2, 4, 255);
+INSERT INTO table_operator_t1 VALUES ( 3, 1, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 60, 11, 16711680);
+INSERT INTO table_operator_t1 VALUES ( 4, 12, 14474460);
+INSERT INTO table_operator_t1 VALUES ( 5, 12, 14474460);
+INSERT INTO table_operator_t1 VALUES ( 6, 12, 14474460);
+INSERT INTO table_operator_t1 VALUES ( 43, 39, 16763080);
+INSERT INTO table_operator_t1 VALUES ( 40, 39, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 53, 1, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 41, 39, 16763080);
+INSERT INTO table_operator_t1 VALUES ( 12, 21, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 13, 21, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 14, 21, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 19, 21, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 15, 21, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 16, 21, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 17, 21, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 18, 21, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 20, 21, 13158600);
+INSERT INTO table_operator_t1 VALUES ( 21, 21, 16777215);
+INSERT INTO table_operator_t1 VALUES ( 22, 33, 12632256);
+INSERT INTO table_operator_t1 VALUES ( 23, 34, 8355839);
+INSERT INTO table_operator_t1 VALUES ( 24, 35, 12632319);
+INSERT INTO table_operator_t1 VALUES ( 25, 36, 8355839);
+INSERT INTO table_operator_t1 VALUES ( 26, 37, 12632256);
+INSERT INTO table_operator_t1 VALUES ( 27, 38, 12632319);
+INSERT INTO table_operator_t1 VALUES ( 28, 39, 12632319);
+INSERT INTO table_operator_t1 VALUES ( 30, 40, 12632256);
+
+# select with '+'
+select * from table_operator_t1 where a + 1 >= b order by a;
+select * from table_operator_t1 where -10 + a < b order by a;
+select * from table_operator_t1 where a + b <> 100 order by a;
+select * from table_operator_t1 where 1000 + c != 100 order by c;
+select * from table_operator_t1 where b + 1000 <=> 100 order by b;
+select * from table_operator_t1 where a + b <= c order by c;
+
+#select * from table_operator_t1 where a + b + 1000 >= c order by a;
+#select * from table_operator_t1 where a + b + c >= 12000000 order by b;
+#select * from table_operator_t1 where a + c >= 12000000 + b order by c;
+
+# select with '-'
+select * from table_operator_t1 where a - 1 >= b order by a;
+select * from table_operator_t1 where 1000 - a < b order by a;
+select * from table_operator_t1 where a - b <> 0 order by a;
+select * from table_operator_t1 where 1000000 - c > 1000 order by c;
+select * from table_operator_t1 where b - 10 <=> 10 order by b;
+select * from table_operator_t1 where c - b >= a order by c;
+
+#select * from table_operator_t1 where c - b - 12000000 >= a order by a;
+#select * from table_operator_t1 where  c - a - b >= 12000000 order by b;
+#select * from table_operator_t1 where c - a >= 12000000 - b order by c;
+
+# select with '*'
+select * from table_operator_t1 where a * 10 >= b order by a;
+select * from table_operator_t1 where 2 * a < b order by a;
+select * from table_operator_t1 where a * b <> 1000 order by a;
+select * from table_operator_t1 where 1 * c > 10000000 order by c;
+select * from table_operator_t1 where b * 10 <=> 210 order by b;
+select * from table_operator_t1 where a * b >= c order by c;
+
+#select * from table_operator_t1 where a * b * 10000 >= c order by a;
+#select * from table_operator_t1 where  a * b * c >= 12000000000 order by b;
+#select * from table_operator_t1 where a * b >= 0.001 * c order by c;
+
+# select with '/'
+select * from table_operator_t1 where c / 1000000 >= b order by c;
+select * from table_operator_t1 where 1000 / a < b order by a;
+select * from table_operator_t1 where c / b <> 1000 order by b;
+select * from table_operator_t1 where 100000 / c > 10000000 order by c;
+select * from table_operator_t1 where c / 10 <=> 1447446 order by c;
+select * from table_operator_t1 where c / b >= a order by a;
+
+#select * from table_operator_t1 where c / a / 1000000 >= b order by a;
+#select * from table_operator_t1 where  c / b / a >= 12000 order by b;
+#select * from table_operator_t1 where c / b >= c / a order by c;
+
+drop table table_operator_t1;
+
+--source suite/sequoiadb_query/include/uninstall_sequoiadb.inc
+# End of 4.1 tests

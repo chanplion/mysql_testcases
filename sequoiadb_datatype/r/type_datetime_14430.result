@@ -1,0 +1,654 @@
+drop table if exists table_datetime_t1;
+create table table_datetime_t1 (t datetime);
+insert ignore into table_datetime_t1 values (101),(691231),(700101),(991231),(10000101),(99991231),(101000000),(691231000000),(700101000000),(991231235959),(10000101000000),(99991231235959),(20030100000000),(20030000000000);
+Warnings:
+Warning	1265	Data truncated for column 't' at row 13
+Warning	1265	Data truncated for column 't' at row 14
+select * from table_datetime_t1;
+t
+2000-01-01 00:00:00
+1933-11-24 17:31:44
+1970-01-01 00:00:00
+1999-12-31 00:00:00
+1952-09-18 21:17:52
+1969-12-22 02:12:16
+2000-01-01 00:00:00
+1933-11-24 17:31:44
+1970-01-01 00:00:00
+1999-12-31 23:59:59
+1952-09-18 21:17:52
+1969-12-23 02:12:15
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+delete from table_datetime_t1 where t > 0;
+optimize table table_datetime_t1;
+Table	Op	Msg_type	Msg_text
+test.table_datetime_t1	optimize	note	The storage engine for the table doesn't support optimize
+check table table_datetime_t1;
+Table	Op	Msg_type	Msg_text
+test.table_datetime_t1	check	note	The storage engine for the table doesn't support check
+delete from table_datetime_t1;
+insert ignore into table_datetime_t1 values("000101"),("691231"),("700101"),("991231"),("00000101"),("00010101"),("99991231"),("00101000000"),("691231000000"),("700101000000"),("991231235959"),("10000101000000"),("99991231235959"),("20030100000000"),("20030000000000");
+Warnings:
+Warning	1264	Out of range value for column 't' at row 14
+Warning	1264	Out of range value for column 't' at row 15
+insert into table_datetime_t1 values ("2003-003-03");
+insert into table_datetime_t1 values ("20030102T131415"),("2001-01-01T01:01:01"), ("2001-1-1T1:01:01");
+select * from table_datetime_t1;
+t
+2000-01-01 00:00:00
+1933-11-24 17:31:44
+1970-01-01 00:00:00
+1999-12-31 00:00:00
+1905-06-06 18:35:44
+1906-06-07 18:35:44
+1969-12-22 02:12:16
+2000-10-10 00:00:00
+1933-11-24 17:31:44
+1970-01-01 00:00:00
+1999-12-31 23:59:59
+1952-09-18 21:17:52
+1969-12-23 02:12:15
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+2003-03-03 00:00:00
+2003-01-02 13:14:15
+2001-01-01 01:01:01
+2001-01-01 01:01:01
+truncate table table_datetime_t1;
+insert ignore into table_datetime_t1 values("2003-0303 12:13:14");
+Warnings:
+Warning	1265	Data truncated for column 't' at row 1
+select * from table_datetime_t1;
+t
+1905-05-05 18:35:44
+drop table table_datetime_t1;
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+CREATE TABLE table_datetime_t1 (a timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, b date, c time, d datetime);
+insert into table_datetime_t1 (b,c,d) values(now(),curtime(),now());
+Warnings:
+Note	1265	Data truncated for column 'b' at row 1
+select date_format(a,"%Y-%m-%d")=b,right(a+0,6)=c+0,a=d+0 from table_datetime_t1;
+date_format(a,"%Y-%m-%d")=b	right(a+0,6)=c+0	a=d+0
+1	1	1
+drop table table_datetime_t1;
+SET sql_mode = default;
+CREATE TABLE table_datetime_t1 (a datetime not null);
+insert ignore into table_datetime_t1 values (0);
+Warnings:
+Warning	1264	Out of range value for column 'a' at row 1
+select * from table_datetime_t1 where a is null;
+a
+drop table table_datetime_t1;
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+CREATE TABLE `table_datetime_t1` (
+`date` datetime NOT NULL default '0000-00-00 00:00:00',
+`numfacture` int(6) unsigned NOT NULL default '0',
+`expedition` datetime NOT NULL default '0000-00-00 00:00:00',
+PRIMARY KEY  (`numfacture`)
+);
+INSERT INTO table_datetime_t1 (expedition) VALUES ('0001-00-00 00:00:00');
+SELECT * FROM table_datetime_t1 WHERE expedition='0001-00-00 00:00:00';
+date	numfacture	expedition
+INSERT INTO table_datetime_t1 (numfacture,expedition) VALUES ('1212','0001-00-00 00:00:00');
+SELECT * FROM table_datetime_t1 WHERE expedition='0001-00-00 00:00:00';
+date	numfacture	expedition
+EXPLAIN SELECT * FROM table_datetime_t1 WHERE expedition='0001-00-00 00:00:00';
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_datetime_t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_datetime_t1`.`date` AS `date`,`test`.`table_datetime_t1`.`numfacture` AS `numfacture`,`test`.`table_datetime_t1`.`expedition` AS `expedition` from `test`.`table_datetime_t1` where (`test`.`table_datetime_t1`.`expedition` = '0001-00-00 00:00:00')
+drop table table_datetime_t1;
+create table table_datetime_t1 (a datetime not null, b datetime not null);
+insert into table_datetime_t1 values (now(), now());
+insert into table_datetime_t1 values (now(), now());
+select * from table_datetime_t1 where a is null or b is null;
+a	b
+drop table table_datetime_t1;
+create table table_datetime_t1 (t datetime);
+insert into table_datetime_t1 values (20030102030460),(20030102036301),(20030102240401),
+(20030132030401),(20031302030401),(100001202030401);
+Warnings:
+Warning	1265	Data truncated for column 't' at row 1
+Warning	1265	Data truncated for column 't' at row 2
+Warning	1265	Data truncated for column 't' at row 3
+Warning	1265	Data truncated for column 't' at row 4
+Warning	1265	Data truncated for column 't' at row 5
+Warning	1264	Out of range value for column 't' at row 6
+select * from table_datetime_t1;
+t
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+delete from table_datetime_t1;
+insert into table_datetime_t1 values
+("2003-01-02 03:04:60"),("2003-01-02 03:63:01"),("2003-01-02 24:04:01"),
+("2003-01-32 03:04:01"),("2003-13-02 03:04:01"), ("10000-12-02 03:04:00");
+Warnings:
+Warning	1265	Data truncated for column 't' at row 1
+Warning	1265	Data truncated for column 't' at row 2
+Warning	1265	Data truncated for column 't' at row 3
+Warning	1265	Data truncated for column 't' at row 4
+Warning	1265	Data truncated for column 't' at row 5
+Warning	1265	Data truncated for column 't' at row 6
+select * from table_datetime_t1;
+t
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+delete from table_datetime_t1;
+insert into table_datetime_t1 values ("0000-00-00 00:00:00 some trailer"),("2003-01-01 00:00:00 some trailer");
+Warnings:
+Warning	1265	Data truncated for column 't' at row 1
+Warning	1265	Data truncated for column 't' at row 2
+select * from table_datetime_t1 order by t;
+t
+1905-05-05 18:35:44
+2003-01-01 00:00:00
+drop table table_datetime_t1;
+create table table_datetime_t1 (dt datetime);
+insert into table_datetime_t1 values ("12-00-00"), ("00-00-00 01:00:00");
+insert into table_datetime_t1 values ("00-00-00"), ("00-00-00 00:00:00");
+select * from table_datetime_t1;
+dt
+2011-11-30 00:00:00
+1999-11-30 01:00:00
+1905-05-05 18:35:44
+1905-05-05 18:35:44
+drop table table_datetime_t1;
+SET sql_mode = default;
+select cast('2006-12-05 22:10:10' as datetime) + 0;
+cast('2006-12-05 22:10:10' as datetime) + 0
+20061205221010
+set @org_mode=@@sql_mode;
+create table table_datetime_t1 (da date default '1962-03-03 23:33:34', dt datetime default '1962-03-03');
+Warnings:
+Note	1292	Incorrect date value: '1962-03-03 23:33:34' for column 'da' at row 1
+show create table table_datetime_t1;
+Table	Create Table
+table_datetime_t1	CREATE TABLE `table_datetime_t1` (
+  `da` date DEFAULT '1962-03-03',
+  `dt` datetime DEFAULT '1962-03-03 00:00:00'
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+insert into table_datetime_t1 values ();
+insert into table_datetime_t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
+Warnings:
+Note	1292	Incorrect date value: '2007-03-23 13:49:38' for column 'da' at row 1
+set @@sql_mode='ansi,traditional';
+insert into table_datetime_t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
+Warnings:
+Note	1292	Incorrect date value: '2007-03-23 13:49:38' for column 'da' at row 1
+insert into table_datetime_t1 set dt='2007-03-23 13:49:38',da=dt;
+Warnings:
+Note	1292	Incorrect date value: '2007-03-23 13:49:38' for column 'da' at row 1
+insert into table_datetime_t1 values ('2007-03-32','2007-03-23 13:49:38');
+ERROR 22007: Incorrect date value: '2007-03-32' for column 'da' at row 1
+select * from table_datetime_t1;
+da	dt
+1962-03-03	1962-03-03 00:00:00
+2007-03-23	2007-03-23 13:49:38
+2007-03-23	2007-03-23 13:49:38
+2007-03-23	2007-03-23 13:49:38
+drop table table_datetime_t1;
+create table table_datetime_t1 (da date default '1962-03-32 23:33:34', dt datetime default '1962-03-03');
+ERROR 42000: Invalid default value for 'da'
+create table table_datetime_t1 (t time default '916:00:00 a');
+ERROR 42000: Invalid default value for 't'
+set @@sql_mode= @org_mode;
+create table table_datetime_t1 (f1 date, f2 datetime, f3 timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+insert into table_datetime_t1(f1) values(curdate());
+select curdate() < now(), f1 < now(), cast(f1 as date) < now() from table_datetime_t1;
+curdate() < now()	f1 < now()	cast(f1 as date) < now()
+1	1	1
+delete from table_datetime_t1;
+insert into table_datetime_t1 values('2001-01-01','2001-01-01 01:01:01','2001-01-01 01:01:01');
+insert into table_datetime_t1 values('2001-02-05','2001-02-05 00:00:00','2001-02-05 01:01:01');
+insert into table_datetime_t1 values('2001-03-10','2001-03-09 01:01:01','2001-03-10 01:01:01');
+insert into table_datetime_t1 values('2001-04-15','2001-04-15 00:00:00','2001-04-15 00:00:00');
+insert into table_datetime_t1 values('2001-05-20','2001-05-20 01:01:01','2001-05-20 01:01:01');
+select f1, f3 from table_datetime_t1 where f1 >= '2001-02-05 00:00:00' and f3 <= '2001-04-15';
+f1	f3
+2001-02-05	2001-02-05 01:01:01
+2001-03-10	2001-03-10 01:01:01
+2001-04-15	2001-04-15 00:00:00
+Warnings:
+Warning	1292	Truncated incorrect time value: '2001-04-15'
+Warning	1292	Truncated incorrect time value: '2001-04-15'
+select f1, f3 from table_datetime_t1 where f1 >= '2001-2-5 0:0:0' and f2 <= '2001-4-15';
+f1	f3
+2001-02-05	2001-02-05 01:01:01
+2001-03-10	2001-03-10 01:01:01
+2001-04-15	2001-04-15 00:00:00
+Warnings:
+Warning	1292	Truncated incorrect time value: '2001-4-15'
+Warning	1292	Truncated incorrect time value: '2001-4-15'
+select f1, f2 from table_datetime_t1 where if(1, f1, 0) >= f2;
+f1	f2
+2001-02-05	2001-02-05 00:00:00
+2001-03-10	2001-03-09 01:01:01
+2001-04-15	2001-04-15 00:00:00
+select 1 from dual where cast('2001-1-1 2:3:4' as date) = cast('2001-01-01' as datetime);
+1
+1
+select f1, f2, f1 > f2, f1 = f2, f1 < f2 from table_datetime_t1;
+f1	f2	f1 > f2	f1 = f2	f1 < f2
+2001-01-01	2001-01-01 01:01:01	0	0	1
+2001-02-05	2001-02-05 00:00:00	0	1	0
+2001-03-10	2001-03-09 01:01:01	1	0	0
+2001-04-15	2001-04-15 00:00:00	0	1	0
+2001-05-20	2001-05-20 01:01:01	0	0	1
+drop table table_datetime_t1;
+create table table_datetime_t1 (f1 date, f2 datetime, f3 timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+insert into table_datetime_t1 values('2001-01-01','2001-01-01 01:01:01','2001-01-01 01:01:01');
+insert into table_datetime_t1 values('2001-02-05','2001-02-05 00:00:00','2001-02-05 01:01:01');
+insert into table_datetime_t1 values('2001-03-10','2001-03-09 01:01:01','2001-03-10 01:01:01');
+insert into table_datetime_t1 values('2001-04-15','2001-04-15 00:00:00','2001-04-15 00:00:00');
+insert into table_datetime_t1 values('2001-05-20','2001-05-20 01:01:01','2001-05-20 01:01:01');
+select f2 from table_datetime_t1 where f2 between '2001-2-5' and '01-04-14';
+f2
+2001-02-05 00:00:00
+2001-03-09 01:01:01
+Warnings:
+Warning	1292	Truncated incorrect time value: '2001-2-5'
+Warning	1292	Truncated incorrect time value: '2001-2-5'
+select f1, f2, f3 from table_datetime_t1 where f1 between f2 and f3;
+f1	f2	f3
+2001-02-05	2001-02-05 00:00:00	2001-02-05 01:01:01
+2001-03-10	2001-03-09 01:01:01	2001-03-10 01:01:01
+2001-04-15	2001-04-15 00:00:00	2001-04-15 00:00:00
+select f2 from table_datetime_t1 where '2001-04-10 12:34:56' between f2 and '01-05-01';
+f2
+2001-01-01 01:01:01
+2001-02-05 00:00:00
+2001-03-09 01:01:01
+select f2, f3 from table_datetime_t1 where '01-03-10' between f2 and f3;
+f2	f3
+2001-03-09 01:01:01	2001-03-10 01:01:01
+select f2 from table_datetime_t1 where DATE(f2) between "2001-4-15" AND "01-4-15";
+f2
+2001-04-15 00:00:00
+SELECT 1 from dual where NOW() BETWEEN CURRENT_DATE() - INTERVAL 1 DAY AND CURRENT_DATE();
+1
+drop table table_datetime_t1;
+create table table_datetime_t1 (f1 date);
+insert into table_datetime_t1 values('01-01-01'),('01-01-02'),('01-01-03');
+select * from table_datetime_t1 where f1 in ('01-01-01','2001-01-02','2001-01-03 00:00:00');
+f1
+2001-01-01
+2001-01-02
+2001-01-03
+create table table_datetime_t2(f2 datetime);
+insert into table_datetime_t2 values('01-01-01 00:00:00'),('01-02-03 12:34:56'),('02-04-06 11:22:33');
+select * from table_datetime_t2 where f2 in ('01-01-01','01-02-03 12:34:56','01-02-03');
+f2
+2001-01-01 00:00:00
+2001-02-03 12:34:56
+Warnings:
+Warning	1292	Truncated incorrect time value: '01-01-01'
+Warning	1292	Truncated incorrect time value: '01-01-01'
+select * from table_datetime_t1,table_datetime_t2 where '01-01-02' in (f1, cast(f2 as date));
+f1	f2
+2001-01-02	2001-01-01 00:00:00
+2001-01-02	2001-02-03 12:34:56
+2001-01-02	2002-04-06 11:22:33
+select * from table_datetime_t1,table_datetime_t2 where '01-01-01' in (f1, '01-02-03');
+f1	f2
+2001-01-01	2001-01-01 00:00:00
+2001-01-01	2001-02-03 12:34:56
+2001-01-01	2002-04-06 11:22:33
+select * from table_datetime_t1,table_datetime_t2 where if(1,'01-02-03 12:34:56','') in (f1, f2);
+f1	f2
+2001-01-01	2001-02-03 12:34:56
+2001-01-02	2001-02-03 12:34:56
+2001-01-03	2001-02-03 12:34:56
+create table table_datetime_t3(f3 varchar(20));
+insert into table_datetime_t3 select * from table_datetime_t2;
+select * from table_datetime_t2,table_datetime_t3 where f2 in (f3,'03-04-05');
+f2	f3
+2001-01-01 00:00:00	2001-01-01 00:00:00
+2001-02-03 12:34:56	2001-02-03 12:34:56
+2002-04-06 11:22:33	2002-04-06 11:22:33
+select f1,f2,f3 from table_datetime_t1,table_datetime_t2,table_datetime_t3 where (f1,'1') in ((f2,'1'),(f3,'1'));
+f1	f2	f3
+2001-01-01	2001-01-01 00:00:00	2001-01-01 00:00:00
+2001-01-01	2001-02-03 12:34:56	2001-01-01 00:00:00
+2001-01-01	2002-04-06 11:22:33	2001-01-01 00:00:00
+2001-01-01	2001-01-01 00:00:00	2001-02-03 12:34:56
+2001-01-01	2001-01-01 00:00:00	2002-04-06 11:22:33
+select f1 from table_datetime_t1 where ('1',f1) in (('1','01-01-01'),('1','2001-1-1 0:0:0'),('1','02-02-02'));
+f1
+2001-01-01
+drop table table_datetime_t1,table_datetime_t2,table_datetime_t3;
+create table table_datetime_t1(f1 datetime);
+insert into table_datetime_t1 values('2001-01-01'),('2002-02-02');
+select * from table_datetime_t1 where f1 between 20020101 and 20070101000000;
+f1
+2002-02-02 00:00:00
+select * from table_datetime_t1 where f1 between 2002010 and 20070101000000;
+f1
+2001-01-01 00:00:00
+2002-02-02 00:00:00
+Warnings:
+Warning	1292	Incorrect datetime value: '2002010' for column 'f1' at row 1
+select * from table_datetime_t1 where f1 between 20020101 and 2007010100000;
+f1
+Warnings:
+Warning	1292	Incorrect datetime value: '2007010100000' for column 'f1' at row 1
+drop table table_datetime_t1;
+#
+# Bug#27216: functions with parameters of different date types may
+#            return wrong type of the result.
+#
+create table table_datetime_t1 (f1 date, f2 datetime, f3 varchar(20));
+create table table_datetime_t2 as select coalesce(f1,f1) as f4 from table_datetime_t1;
+desc table_datetime_t2;
+Field	Type	Null	Key	Default	Extra
+f4	date	YES		NULL	
+create table table_datetime_t3 as select coalesce(f1,f2) as f4 from table_datetime_t1;
+desc table_datetime_t3;
+Field	Type	Null	Key	Default	Extra
+f4	datetime	YES		NULL	
+create table table_datetime_t4 as select coalesce(f2,f2) as f4 from table_datetime_t1;
+desc table_datetime_t4;
+Field	Type	Null	Key	Default	Extra
+f4	datetime	YES		NULL	
+create table table_datetime_t5 as select coalesce(f1,f3) as f4 from table_datetime_t1;
+desc table_datetime_t5;
+Field	Type	Null	Key	Default	Extra
+f4	varchar(20)	YES		NULL	
+create table table_datetime_t6 as select coalesce(f2,f3) as f4 from table_datetime_t1;
+desc table_datetime_t6;
+Field	Type	Null	Key	Default	Extra
+f4	varchar(20)	YES		NULL	
+create table table_datetime_t7 as select coalesce(makedate(1997,1),f2) as f4 from table_datetime_t1;
+desc table_datetime_t7;
+Field	Type	Null	Key	Default	Extra
+f4	datetime	YES		NULL	
+create table table_datetime_t8 as select coalesce(cast('01-01-01' as datetime),f2) as f4
+from table_datetime_t1;
+desc table_datetime_t8;
+Field	Type	Null	Key	Default	Extra
+f4	datetime	YES		NULL	
+create table table_datetime_t9 as select case when 1 then cast('01-01-01' as date)
+when 0 then cast('01-01-01' as date) end as f4 from table_datetime_t1;
+desc table_datetime_t9;
+Field	Type	Null	Key	Default	Extra
+f4	date	YES		NULL	
+create table table_datetime_t10 as select case when 1 then cast('01-01-01' as datetime)
+when 0 then cast('01-01-01' as datetime) end as f4 from table_datetime_t1;
+desc table_datetime_t10;
+Field	Type	Null	Key	Default	Extra
+f4	datetime	YES		NULL	
+create table table_datetime_t11 as select if(1, cast('01-01-01' as datetime),
+cast('01-01-01' as date)) as f4 from table_datetime_t1;
+desc table_datetime_t11;
+Field	Type	Null	Key	Default	Extra
+f4	datetime	YES		NULL	
+create table table_datetime_t12 as select least(cast('01-01-01' as datetime),
+cast('01-01-01' as date)) as f4 from table_datetime_t1;
+desc table_datetime_t12;
+Field	Type	Null	Key	Default	Extra
+f4	datetime	YES		NULL	
+create table table_datetime_t13 as select ifnull(cast('01-01-01' as datetime),
+cast('01-01-01' as date)) as f4 from table_datetime_t1;
+desc table_datetime_t13;
+Field	Type	Null	Key	Default	Extra
+f4	datetime	YES		NULL	
+drop tables table_datetime_t1,table_datetime_t2,table_datetime_t3,table_datetime_t4,table_datetime_t5,table_datetime_t6,table_datetime_t7,table_datetime_t8,table_datetime_t9,table_datetime_t10,table_datetime_t11,table_datetime_t12,table_datetime_t13;
+create table table_datetime_t1 (a tinyint);
+insert into table_datetime_t1 values (), (), ();
+select sum(a) from table_datetime_t1 group by convert(a, datetime);
+sum(a)
+NULL
+drop table table_datetime_t1;
+create table table_datetime_t1 (id int(10) not null, cur_date datetime not null);
+create table table_datetime_t2 (id int(10) not null, cur_date date not null);
+insert into table_datetime_t1 (id, cur_date) values (1, '2007-04-25 18:30:22');
+insert into table_datetime_t2 (id, cur_date) values (1, '2007-04-25');
+explain extended
+select * from table_datetime_t1
+where id in (select id from table_datetime_t1 as x1 where (table_datetime_t1.cur_date is null));
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	table_datetime_t1	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where
+2	DEPENDENT SUBQUERY	x1	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where
+Warnings:
+Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
+Note	1276	Field or reference 'test.table_datetime_t1.cur_date' of SELECT #2 was resolved in SELECT #1
+Note	1003	/* select#1 */ select `test`.`table_datetime_t1`.`id` AS `id`,`test`.`table_datetime_t1`.`cur_date` AS `cur_date` from `test`.`table_datetime_t1` where <in_optimizer>(`test`.`table_datetime_t1`.`id`,<exists>(/* select#2 */ select 1 from `test`.`table_datetime_t1` `x1` where ((`test`.`table_datetime_t1`.`cur_date` = '0000-00-00 00:00:00') and (<cache>(`test`.`table_datetime_t1`.`id`) = `test`.`x1`.`id`))))
+select * from table_datetime_t1
+where id in (select id from table_datetime_t1 as x1 where (table_datetime_t1.cur_date is null));
+id	cur_date
+explain extended
+select * from table_datetime_t2
+where id in (select id from table_datetime_t2 as x1 where (table_datetime_t2.cur_date is null));
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	table_datetime_t2	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where
+2	DEPENDENT SUBQUERY	x1	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where
+Warnings:
+Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
+Note	1276	Field or reference 'test.table_datetime_t2.cur_date' of SELECT #2 was resolved in SELECT #1
+Note	1003	/* select#1 */ select `test`.`table_datetime_t2`.`id` AS `id`,`test`.`table_datetime_t2`.`cur_date` AS `cur_date` from `test`.`table_datetime_t2` where <in_optimizer>(`test`.`table_datetime_t2`.`id`,<exists>(/* select#2 */ select 1 from `test`.`table_datetime_t2` `x1` where ((`test`.`table_datetime_t2`.`cur_date` = '0000-00-00') and (<cache>(`test`.`table_datetime_t2`.`id`) = `test`.`x1`.`id`))))
+select * from table_datetime_t2
+where id in (select id from table_datetime_t2 as x1 where (table_datetime_t2.cur_date is null));
+id	cur_date
+insert into table_datetime_t1 (id, cur_date) values (2, '2007-04-26 18:30:22');
+insert into table_datetime_t2 (id, cur_date) values (2, '2007-04-26');
+explain extended
+select * from table_datetime_t1
+where id in (select id from table_datetime_t1 as x1 where (table_datetime_t1.cur_date is null));
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	table_datetime_t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
+2	DEPENDENT SUBQUERY	x1	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where
+Warnings:
+Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
+Note	1276	Field or reference 'test.table_datetime_t1.cur_date' of SELECT #2 was resolved in SELECT #1
+Note	1003	/* select#1 */ select `test`.`table_datetime_t1`.`id` AS `id`,`test`.`table_datetime_t1`.`cur_date` AS `cur_date` from `test`.`table_datetime_t1` where <in_optimizer>(`test`.`table_datetime_t1`.`id`,<exists>(/* select#2 */ select 1 from `test`.`table_datetime_t1` `x1` where ((`test`.`table_datetime_t1`.`cur_date` = '0000-00-00 00:00:00') and (<cache>(`test`.`table_datetime_t1`.`id`) = `test`.`x1`.`id`))))
+select * from table_datetime_t1
+where id in (select id from table_datetime_t1 as x1 where (table_datetime_t1.cur_date is null));
+id	cur_date
+explain extended
+select * from table_datetime_t2
+where id in (select id from table_datetime_t2 as x1 where (table_datetime_t2.cur_date is null));
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	PRIMARY	table_datetime_t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
+2	DEPENDENT SUBQUERY	x1	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where
+Warnings:
+Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
+Note	1276	Field or reference 'test.table_datetime_t2.cur_date' of SELECT #2 was resolved in SELECT #1
+Note	1003	/* select#1 */ select `test`.`table_datetime_t2`.`id` AS `id`,`test`.`table_datetime_t2`.`cur_date` AS `cur_date` from `test`.`table_datetime_t2` where <in_optimizer>(`test`.`table_datetime_t2`.`id`,<exists>(/* select#2 */ select 1 from `test`.`table_datetime_t2` `x1` where ((`test`.`table_datetime_t2`.`cur_date` = '0000-00-00') and (<cache>(`test`.`table_datetime_t2`.`id`) = `test`.`x1`.`id`))))
+select * from table_datetime_t2
+where id in (select id from table_datetime_t2 as x1 where (table_datetime_t2.cur_date is null));
+id	cur_date
+set @@optimizer_switch=default;
+drop table table_datetime_t1,table_datetime_t2;
+set @org_mode=@@sql_mode;
+create table table_datetime_t1 (da date default '1962-03-03 23:33:34', dt datetime default '1962-03-03');
+Warnings:
+Note	1292	Incorrect date value: '1962-03-03 23:33:34' for column 'da' at row 1
+show create table table_datetime_t1;
+Table	Create Table
+table_datetime_t1	CREATE TABLE `table_datetime_t1` (
+  `da` date DEFAULT '1962-03-03',
+  `dt` datetime DEFAULT '1962-03-03 00:00:00'
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+insert into table_datetime_t1 values ();
+insert into table_datetime_t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
+Warnings:
+Note	1292	Incorrect date value: '2007-03-23 13:49:38' for column 'da' at row 1
+set @@sql_mode='ansi,traditional';
+insert into table_datetime_t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
+Warnings:
+Note	1292	Incorrect date value: '2007-03-23 13:49:38' for column 'da' at row 1
+insert into table_datetime_t1 set dt='2007-03-23 13:49:38',da=dt;
+Warnings:
+Note	1292	Incorrect date value: '2007-03-23 13:49:38' for column 'da' at row 1
+insert into table_datetime_t1 values ('2007-03-32','2007-03-23 13:49:38');
+ERROR 22007: Incorrect date value: '2007-03-32' for column 'da' at row 1
+select * from table_datetime_t1;
+da	dt
+1962-03-03	1962-03-03 00:00:00
+2007-03-23	2007-03-23 13:49:38
+2007-03-23	2007-03-23 13:49:38
+2007-03-23	2007-03-23 13:49:38
+drop table table_datetime_t1;
+create table table_datetime_t1 (da date default '1962-03-32 23:33:34', dt datetime default '1962-03-03');
+ERROR 42000: Invalid default value for 'da'
+set @@sql_mode= @org_mode;
+# 
+# Bug#59173: Failure to handle DATE(TIME) values where Year, Month or
+# Day is ZERO 
+# 
+CREATE TABLE table_datetime_t1 (dtable_datetime_t1 DATETIME);
+INSERT IGNORE INTO table_datetime_t1 (dtable_datetime_t1) VALUES ('0000-00-01 00:00:01');
+Warnings:
+Warning	1264	Out of range value for column 'dtable_datetime_t1' at row 1
+DELETE IGNORE  FROM table_datetime_t1 WHERE dtable_datetime_t1 = '0000-00-01 00:00:01';
+Warnings:
+Warning	1292	Incorrect datetime value: '0000-00-01 00:00:01' for column 'dtable_datetime_t1' at row 1
+Warning	1292	Incorrect datetime value: '0000-00-01 00:00:01' for column 'dtable_datetime_t1' at row 1
+# Should be empty
+SELECT * FROM table_datetime_t1;
+dtable_datetime_t1
+1905-05-05 18:35:44
+DROP TABLE table_datetime_t1;
+#
+# Bug#57095: Wrongly chosen expression cache type led to a wrong
+#            result.
+#
+CREATE TABLE table_datetime_t1 (`b` datetime );
+INSERT INTO table_datetime_t1 VALUES ('2010-01-01 00:00:00'), ('2010-01-01 00:00:00');
+SELECT * FROM table_datetime_t1 WHERE b <= coalesce(NULL, now());
+b
+2010-01-01 00:00:00
+2010-01-01 00:00:00
+DROP TABLE table_datetime_t1;
+#
+#
+# BUG#12561818: RERUN OF STORED FUNCTION GIVES ERROR 1172: 
+#               RESULT CONSISTED OF MORE THAN ONE ROW
+#
+CREATE TABLE table_datetime_t1 (a DATE NOT NULL, b INT);
+INSERT IGNORE INTO table_datetime_t1 VALUES ('0000-00-00',1), ('1999-05-10',2);
+Warnings:
+Warning	1264	Out of range value for column 'a' at row 1
+CREATE TABLE table_datetime_t2 (a DATETIME NOT NULL, b INT);
+INSERT IGNORE INTO table_datetime_t2 VALUES ('0000-00-00 00:00:00',1), ('1999-05-10 00:00:00',2);
+Warnings:
+Warning	1264	Out of range value for column 'a' at row 1
+
+SELECT * FROM table_datetime_t1 WHERE a IS NULL;
+a	b
+SELECT * FROM table_datetime_t2 WHERE a IS NULL;
+a	b
+SELECT * FROM table_datetime_t1 LEFT JOIN table_datetime_t1 AS table_datetime_t1_2 ON 1 WHERE table_datetime_t1_2.a IS NULL;
+a	b	a	b
+SELECT * FROM table_datetime_t2 LEFT JOIN table_datetime_t2 AS table_datetime_t2_2 ON 1 WHERE table_datetime_t2_2.a IS NULL;
+a	b	a	b
+SELECT * FROM table_datetime_t1 JOIN table_datetime_t1 AS table_datetime_t1_2 ON 1 WHERE table_datetime_t1_2.a IS NULL;
+a	b	a	b
+SELECT * FROM table_datetime_t2 JOIN table_datetime_t2 AS table_datetime_t2_2 ON 1 WHERE table_datetime_t2_2.a IS NULL;
+a	b	a	b
+DROP TABLE if EXISTS table_datetime_t1, table_datetime_t2, table_datetime_t3;
+#
+# WL#946: Testing rounding
+#
+CREATE TABLE table_datetime_t1 (a DATETIME);
+INSERT INTO table_datetime_t1 VALUES ('2001-01-01 10:10:10.9999994'), ('2001-01-01 10:10:10.9999995');
+INSERT INTO table_datetime_t1 VALUES (20010101101010.9999994), (20010101101010.9999995);
+SELECT * FROM table_datetime_t1;
+a
+2001-01-01 10:10:11
+2001-01-01 10:10:11
+2001-01-01 10:10:11
+2001-01-01 10:10:11
+DROP TABLE table_datetime_t1;
+DROP TABLE if EXISTS table_datetime_t1, table_datetime_t2, table_datetime_t3;
+SET @org_mode=@@sql_mode;
+#Table creation in strict mode
+SET @@sql_mode='NO_ZERO_DATE,STRICT_ALL_TABLES';
+Warnings:
+Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT 0);
+ERROR 42000: Invalid default value for 'c1'
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT '0000-00-00 00:00:00');
+ERROR 42000: Invalid default value for 'c1'
+SET @@sql_mode='NO_ZERO_IN_DATE,STRICT_ALL_TABLES';
+Warnings:
+Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT '2012-02-00 12:12:12');
+ERROR 42000: Invalid default value for 'c1'
+#Table creation in non-strict mode but with NO_ZERO_DATE/NO_ZERO_IN_DATE
+SET @@sql_mode='NO_ZERO_DATE';
+Warnings:
+Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT 0);
+Warnings:
+Warning	1264	Out of range value for column 'c1' at row 1
+CREATE TABLE table_datetime_t2 (c1 DATETIME DEFAULT '0000-00-00 00:00:00');
+Warnings:
+Warning	1264	Out of range value for column 'c1' at row 1
+SET @@sql_mode='NO_ZERO_IN_DATE';
+Warnings:
+Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
+CREATE TABLE table_datetime_t3 (c1 DATETIME DEFAULT '2012-02-00 12:12:12');
+Warnings:
+Warning	1264	Out of range value for column 'c1' at row 1
+DROP TABLE table_datetime_t1, table_datetime_t2, table_datetime_t3;
+#Table creation with out any SQL modes
+SET @@sql_mode='';
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT 0);
+CREATE TABLE table_datetime_t2 (c1 DATETIME DEFAULT '0000-00-00 00:00:00');
+CREATE TABLE table_datetime_t3 (c1 DATETIME DEFAULT '2012-02-00 12:12:12');
+DROP TABLE table_datetime_t1, table_datetime_t2, table_datetime_t3;
+CREATE TABLE table_datetime_t1 (c1 int);
+#Alter table in strict mode with NO_ZERO_DATE/NO_ZERO_IN_DATE
+SET @@sql_mode='NO_ZERO_DATE,STRICT_ALL_TABLES';
+Warnings:
+Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
+ALTER TABLE table_datetime_t1 ADD c2 DATETIME DEFAULT 0;
+ERROR 42000: Invalid default value for 'c2'
+ALTER TABLE table_datetime_t1 ADD c2 DATETIME DEFAULT '0000-00-00';
+ERROR 42000: Invalid default value for 'c2'
+SET @@sql_mode='NO_ZERO_IN_DATE,STRICT_ALL_TABLES';
+Warnings:
+Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
+ALTER TABLE table_datetime_t1 ADD c2 DATETIME DEFAULT '2012-02-00';
+ERROR 42000: Invalid default value for 'c2'
+DROP TABLE if exists table_datetime_t1;
+create table table_datetime_t1 (a datetime);
+insert into table_datetime_t1 values ('1970-10-01');
+insert into table_datetime_t1 values ('2000-01-01');
+insert into table_datetime_t1 values ('2037-12-31');
+insert into table_datetime_t1 values ('abcd');
+ERROR 22007: Incorrect datetime value: 'abcd' for column 'a' at row 1
+insert into table_datetime_t1 values ('99999-01-01');
+ERROR 22007: Incorrect datetime value: '99999-01-01' for column 'a' at row 1
+select * from table_datetime_t1 order by a;
+a
+1970-10-01 00:00:00
+2000-01-01 00:00:00
+2037-12-31 00:00:00
+update table_datetime_t1 set a = '2018-01-01 11:00:00' where a = '1970-10-01 00:00:00';
+select * from table_datetime_t1 order by a;
+a
+2000-01-01 00:00:00
+2018-01-01 11:00:00
+2037-12-31 00:00:00
+delete from table_datetime_t1 where a = '1970-10-01 00:00:00';
+select * from table_datetime_t1 order by a;
+a
+2000-01-01 00:00:00
+2018-01-01 11:00:00
+2037-12-31 00:00:00
+drop table table_datetime_t1;

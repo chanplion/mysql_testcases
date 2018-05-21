@@ -1,0 +1,27 @@
+drop table if exists table_transdql_t1;
+CREATE TABLE table_transdql_t1 (a INT NOT NULL, b text);
+INSERT INTO table_transdql_t1 VALUES (0, 'a'),(1, 'b'),(2, 'c'),(3, 'd'),(4, 'e'),(5, 'f'),(6, 'g'),(7, 'h'),(8, 'i'),(9, 'j'),(10, 'k');
+START TRANSACTION;
+SELECT * FROM table_transdql_t1 WHERE a > 5 ORDER BY a;
+a	b
+6	g
+7	h
+8	i
+9	j
+10	k
+ROLLBACK;
+START TRANSACTION;
+SELECT * FROM table_transdql_t1 WHERE b <> 'b' ORDER BY b;
+a	b
+0	a
+2	c
+3	d
+4	e
+5	f
+6	g
+7	h
+8	i
+9	j
+10	k
+COMMIT;
+DROP TABLE table_transdql_t1;

@@ -1,0 +1,24 @@
+drop table if exists table_transddl_t1;
+START TRANSACTION;
+CREATE TABLE table_transddl_t1 (a INT NOT NULL, b text);
+ROLLBACK;
+SHOW CREATE TABLE table_transddl_t1;
+Table	Create Table
+table_transddl_t1	CREATE TABLE `table_transddl_t1` (
+  `a` int(11) NOT NULL,
+  `b` text
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+START TRANSACTION;
+ALTER TABLE table_transddl_t1 ADD INDEX a (a);
+ROLLBACK;
+SHOW INDEX IN table_transddl_t1;
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
+table_transddl_t1	1	a	1	a	A	NULL	NULL	NULL		BTREE		
+START TRANSACTION;
+DROP TABLE table_transddl_t1;
+ROLLBACK;
+SHOW CREATE TABLE table_transddl_t1;
+ERROR 42S02: Table 'test.table_transddl_t1' doesn't exist
+DROP TABLE IF EXISTS table_transddl_t1;
+Warnings:
+Note	1051	Unknown table 'test.table_transddl_t1'

@@ -1,0 +1,1406 @@
+drop table if exists table_join_t1,table_join_t2,table_join_t3;
+CREATE TABLE table_join_t1 (S1 INT);
+CREATE TABLE table_join_t2 (S1 INT);
+INSERT INTO table_join_t1 VALUES (1);
+INSERT INTO table_join_t2 VALUES (2);
+SELECT * FROM table_join_t1 JOIN table_join_t2;
+S1	S1
+1	2
+SELECT * FROM table_join_t1 INNER JOIN table_join_t2;
+S1	S1
+1	2
+SELECT * from table_join_t1 JOIN table_join_t2 USING (S1);
+S1
+SELECT * FROM table_join_t1 INNER JOIN table_join_t2 USING (S1);
+S1
+SELECT * from table_join_t1 CROSS JOIN table_join_t2;
+S1	S1
+1	2
+SELECT * from table_join_t1 LEFT JOIN table_join_t2 USING(S1);
+S1
+1
+SELECT * from table_join_t1 LEFT JOIN table_join_t2 ON(table_join_t2.S1=2);
+S1	S1
+1	2
+SELECT * from table_join_t1 RIGHT JOIN table_join_t2 USING(S1);
+S1
+2
+SELECT * from table_join_t1 RIGHT JOIN table_join_t2 ON(table_join_t1.S1=1);
+S1	S1
+1	2
+drop table table_join_t1,table_join_t2;
+create table table_join_t1 (id int primary key);
+create table table_join_t2 (id int);
+insert into table_join_t1 values (75);
+insert into table_join_t1 values (79);
+insert into table_join_t1 values (78);
+insert into table_join_t1 values (77);
+replace into table_join_t1 values (76);
+insert into table_join_t1 values (104);
+insert into table_join_t1 values (103);
+insert into table_join_t1 values (102);
+insert into table_join_t1 values (101);
+insert into table_join_t1 values (105);
+insert into table_join_t1 values (106);
+insert into table_join_t1 values (107);
+insert into table_join_t2 values (107),(75),(1000);
+select table_join_t1.id, table_join_t2.id from table_join_t1, table_join_t2 where table_join_t2.id = table_join_t1.id;
+id	id
+107	107
+75	75
+select table_join_t1.id, count(table_join_t2.id) from table_join_t1,table_join_t2 where table_join_t2.id = table_join_t1.id group by table_join_t1.id;
+id	count(table_join_t2.id)
+75	1
+107	1
+select table_join_t1.id, count(table_join_t2.id) from table_join_t1,table_join_t2 where table_join_t2.id = table_join_t1.id group by table_join_t2.id;
+id	count(table_join_t2.id)
+75	1
+107	1
+select table_join_t1.id,table_join_t2.id from table_join_t2 left join table_join_t1 on table_join_t1.id>=74 and table_join_t1.id<=0 where table_join_t2.id=75 and table_join_t1.id is null;
+id	id
+NULL	75
+explain select table_join_t1.id,table_join_t2.id from table_join_t2 left join table_join_t1 on table_join_t1.id>=74 and table_join_t1.id<=0 where table_join_t2.id=75 and table_join_t1.id is null;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	const	PRIMARY	NULL	NULL	NULL	1	100.00	Impossible ON condition
+1	SIMPLE	table_join_t2	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where with pushed condition (`test`.`table_join_t2`.`id` = 75)
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`id` AS `id`,`test`.`table_join_t2`.`id` AS `id` from `test`.`table_join_t2` left join `test`.`table_join_t1` on(((`test`.`table_join_t1`.`id` >= 74) and (`test`.`table_join_t1`.`id` <= 0))) where ((`test`.`table_join_t2`.`id` = 75) and isnull(`test`.`table_join_t1`.`id`))
+explain select table_join_t1.id, table_join_t2.id from table_join_t1, table_join_t2 where table_join_t2.id = table_join_t1.id and table_join_t1.id <0 and table_join_t1.id > 0;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`id` AS `id`,`test`.`table_join_t2`.`id` AS `id` from `test`.`table_join_t1` join `test`.`table_join_t2` where ((`test`.`table_join_t1`.`id` < 0) and (`test`.`table_join_t1`.`id` > 0) and multiple equal(`test`.`table_join_t2`.`id`, `test`.`table_join_t1`.`id`))
+drop table table_join_t1,table_join_t2;
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+CREATE TABLE table_join_t1 (
+id int(11) NOT NULL,
+token varchar(100) DEFAULT '' NOT NULL,
+count int(11) DEFAULT '0' NOT NULL,
+qty int(11),
+phone char(1) DEFAULT '' NOT NULL,
+timestamp datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+PRIMARY KEY (id),
+KEY token (token(15)),
+UNIQUE token_2 (id, token(75),count,phone)
+);
+SET sql_mode = default;
+INSERT INTO table_join_t1 VALUES (21,'e45703b64de71482360de8fec94c3ade',3,7800,'n','1999-12-23 17:22:21');
+INSERT INTO table_join_t1 VALUES (22,'e45703b64de71482360de8fec94c3ade',4,5000,'y','1999-12-23 17:22:21');
+INSERT INTO table_join_t1 VALUES (18,'346d1cb63c89285b2351f0ca4de40eda',3,13200,'b','1999-12-23 11:58:04');
+INSERT INTO table_join_t1 VALUES (17,'ca6ddeb689e1b48a04146b1b5b6f936a',4,15000,'b','1999-12-23 11:36:53');
+INSERT INTO table_join_t1 VALUES (16,'ca6ddeb689e1b48a04146b1b5b6f936a',3,13200,'b','1999-12-23 11:36:53');
+INSERT INTO table_join_t1 VALUES (26,'a71250b7ed780f6ef3185bfffe027983',5,1500,'b','1999-12-27 09:44:24');
+INSERT INTO table_join_t1 VALUES (24,'4d75906f3c37ecff478a1eb56637aa09',3,5400,'y','1999-12-23 17:29:12');
+INSERT INTO table_join_t1 VALUES (25,'4d75906f3c37ecff478a1eb56637aa09',4,6500,'y','1999-12-23 17:29:12');
+INSERT INTO table_join_t1 VALUES (27,'a71250b7ed780f6ef3185bfffe027983',3,6200,'b','1999-12-27 09:44:24');
+INSERT INTO table_join_t1 VALUES (28,'a71250b7ed780f6ef3185bfffe027983',3,5400,'y','1999-12-27 09:44:36');
+INSERT INTO table_join_t1 VALUES (29,'a71250b7ed780f6ef3185bfffe027983',4,17700,'b','1999-12-27 09:45:05');
+CREATE TABLE table_join_t2 (
+id int(11) NOT NULL,
+category int(11) DEFAULT '0' NOT NULL,
+county int(11) DEFAULT '0' NOT NULL,
+state int(11) DEFAULT '0' NOT NULL,
+phones int(11) DEFAULT '0' NOT NULL,
+nophones int(11) DEFAULT '0' NOT NULL,
+PRIMARY KEY (id),
+KEY category (category,county,state)
+);
+INSERT INTO table_join_t2 VALUES (3,2,11,12,5400,7800);
+INSERT INTO table_join_t2 VALUES (4,2,25,12,6500,11200);
+INSERT INTO table_join_t2 VALUES (5,1,37,6,10000,12000);
+select a.id, b.category as catid, b.state as stateid, b.county as countyid from table_join_t1 a, table_join_t2 b ignore index (primary) where (a.token ='a71250b7ed780f6ef3185bfffe027983') and (a.count = b.id);
+id	catid	stateid	countyid
+27	2	12	11
+28	2	12	11
+29	2	12	25
+26	1	6	37
+select a.id, b.category as catid, b.state as stateid, b.county as
+countyid from table_join_t1 a, table_join_t2 b where (a.token =
+'a71250b7ed780f6ef3185bfffe027983') and (a.count = b.id) order by a.id;
+id	catid	stateid	countyid
+26	1	6	37
+27	2	12	11
+28	2	12	11
+29	2	12	25
+drop table table_join_t1, table_join_t2;
+create table table_join_t1 (a int primary key);
+insert into table_join_t1 values(1),(2);
+select table_join_t1.a from table_join_t1 as table_join_t1 left join table_join_t1 as table_join_t2 using (a) left join table_join_t1 as table_join_t3 using (a) left join table_join_t1 as table_join_t4 using (a) left join table_join_t1 as table_join_t5 using (a) left join table_join_t1 as table_join_t6 using (a) left join table_join_t1 as table_join_t7 using (a) left join table_join_t1 as table_join_t8 using (a) left join table_join_t1 as table_join_t9 using (a) left join table_join_t1 as table_join_t10 using (a) left join table_join_t1 as table_join_t11 using (a) left join table_join_t1 as table_join_t12 using (a) left join table_join_t1 as table_join_t13 using (a) left join table_join_t1 as table_join_t14 using (a) left join table_join_t1 as table_join_t15 using (a) left join table_join_t1 as table_join_t16 using (a) left join table_join_t1 as table_join_t17 using (a) left join table_join_t1 as table_join_t18 using (a) left join table_join_t1 as table_join_t19 using (a) left join table_join_t1 as table_join_t20 using (a) left join table_join_t1 as table_join_t21 using (a) left join table_join_t1 as table_join_t22 using (a) left join table_join_t1 as table_join_t23 using (a) left join table_join_t1 as table_join_t24 using (a) left join table_join_t1 as table_join_t25 using (a) left join table_join_t1 as table_join_t26 using (a) left join table_join_t1 as table_join_t27 using (a) left join table_join_t1 as table_join_t28 using (a) left join table_join_t1 as table_join_t29 using (a) left join table_join_t1 as table_join_t30 using (a) left join table_join_t1 as table_join_t31 using (a);
+a
+1
+2
+select table_join_t1.a from table_join_t1 as table_join_t1 left join table_join_t1 as table_join_t2 using (a) left join table_join_t1 as table_join_t3 using (a) left join table_join_t1 as table_join_t4 using (a) left join table_join_t1 as table_join_t5 using (a) left join table_join_t1 as table_join_t6 using (a) left join table_join_t1 as table_join_t7 using (a) left join table_join_t1 as table_join_t8 using (a) left join table_join_t1 as table_join_t9 using (a) left join table_join_t1 as table_join_t10 using (a) left join table_join_t1 as table_join_t11 using (a) left join table_join_t1 as table_join_t12 using (a) left join table_join_t1 as table_join_t13 using (a) left join table_join_t1 as table_join_t14 using (a) left join table_join_t1 as table_join_t15 using (a) left join table_join_t1 as table_join_t16 using (a) left join table_join_t1 as table_join_t17 using (a) left join table_join_t1 as table_join_t18 using (a) left join table_join_t1 as table_join_t19 using (a) left join table_join_t1 as table_join_t20 using (a) left join table_join_t1 as table_join_t21 using (a) left join table_join_t1 as table_join_t22 using (a) left join table_join_t1 as table_join_t23 using (a) left join table_join_t1 as table_join_t24 using (a) left join table_join_t1 as table_join_t25 using (a) left join table_join_t1 as table_join_t26 using (a) left join table_join_t1 as table_join_t27 using (a) left join table_join_t1 as table_join_t28 using (a) left join table_join_t1 as table_join_t29 using (a) left join table_join_t1 as table_join_t30 using (a) left join table_join_t1 as table_join_t31 using (a) left join table_join_t1 as table_join_t32 using (a) left join table_join_t1 as table_join_t33 using (a) left join table_join_t1 as table_join_t34 using (a) left join table_join_t1 as table_join_t35 using (a) left join table_join_t1 as table_join_t36 using (a) left join table_join_t1 as table_join_t37 using (a) left join table_join_t1 as table_join_t38 using (a) left join table_join_t1 as table_join_t39 using (a) left join table_join_t1 as table_join_t40 using (a) left join table_join_t1 as table_join_t41 using (a) left join table_join_t1 as table_join_t42 using (a) left join table_join_t1 as table_join_t43 using (a) left join table_join_t1 as table_join_t44 using (a) left join table_join_t1 as table_join_t45 using (a) left join table_join_t1 as table_join_t46 using (a) left join table_join_t1 as table_join_t47 using (a) left join table_join_t1 as table_join_t48 using (a) left join table_join_t1 as table_join_t49 using (a) left join table_join_t1 as table_join_t50 using (a) left join table_join_t1 as table_join_t51 using (a) left join table_join_t1 as table_join_t52 using (a) left join table_join_t1 as table_join_t53 using (a) left join table_join_t1 as table_join_t54 using (a) left join table_join_t1 as table_join_t55 using (a) left join table_join_t1 as table_join_t56 using (a) left join table_join_t1 as table_join_t57 using (a) left join table_join_t1 as table_join_t58 using (a) left join table_join_t1 as table_join_t59 using (a) left join table_join_t1 as table_join_t60 using (a) left join table_join_t1 as table_join_t61 using (a) left join table_join_t1 as table_join_t62 using (a) left join table_join_t1 as table_join_t63 using (a) left join table_join_t1 as table_join_t64 using (a) left join table_join_t1 as table_join_t65 using (a);
+ERROR HY000: Too many tables; MySQL can only use XX tables in a join
+select a from table_join_t1 as table_join_t1 left join table_join_t1 as table_join_t2 using (a) left join table_join_t1 as table_join_t3 using (a) left join table_join_t1 as table_join_t4 using (a) left join table_join_t1 as table_join_t5 using (a) left join table_join_t1 as table_join_t6 using (a) left join table_join_t1 as table_join_t7 using (a) left join table_join_t1 as table_join_t8 using (a) left join table_join_t1 as table_join_t9 using (a) left join table_join_t1 as table_join_t10 using (a) left join table_join_t1 as table_join_t11 using (a) left join table_join_t1 as table_join_t12 using (a) left join table_join_t1 as table_join_t13 using (a) left join table_join_t1 as table_join_t14 using (a) left join table_join_t1 as table_join_t15 using (a) left join table_join_t1 as table_join_t16 using (a) left join table_join_t1 as table_join_t17 using (a) left join table_join_t1 as table_join_t18 using (a) left join table_join_t1 as table_join_t19 using (a) left join table_join_t1 as table_join_t20 using (a) left join table_join_t1 as table_join_t21 using (a) left join table_join_t1 as table_join_t22 using (a) left join table_join_t1 as table_join_t23 using (a) left join table_join_t1 as table_join_t24 using (a) left join table_join_t1 as table_join_t25 using (a) left join table_join_t1 as table_join_t26 using (a) left join table_join_t1 as table_join_t27 using (a) left join table_join_t1 as table_join_t28 using (a) left join table_join_t1 as table_join_t29 using (a) left join table_join_t1 as table_join_t30 using (a) left join table_join_t1 as table_join_t31 using (a);
+a
+1
+2
+select a from table_join_t1 as table_join_t1 left join table_join_t1 as table_join_t2 using (a) left join table_join_t1 as table_join_t3 using (a) left join table_join_t1 as table_join_t4 using (a) left join table_join_t1 as table_join_t5 using (a) left join table_join_t1 as table_join_t6 using (a) left join table_join_t1 as table_join_t7 using (a) left join table_join_t1 as table_join_t8 using (a) left join table_join_t1 as table_join_t9 using (a) left join table_join_t1 as table_join_t10 using (a) left join table_join_t1 as table_join_t11 using (a) left join table_join_t1 as table_join_t12 using (a) left join table_join_t1 as table_join_t13 using (a) left join table_join_t1 as table_join_t14 using (a) left join table_join_t1 as table_join_t15 using (a) left join table_join_t1 as table_join_t16 using (a) left join table_join_t1 as table_join_t17 using (a) left join table_join_t1 as table_join_t18 using (a) left join table_join_t1 as table_join_t19 using (a) left join table_join_t1 as table_join_t20 using (a) left join table_join_t1 as table_join_t21 using (a) left join table_join_t1 as table_join_t22 using (a) left join table_join_t1 as table_join_t23 using (a) left join table_join_t1 as table_join_t24 using (a) left join table_join_t1 as table_join_t25 using (a) left join table_join_t1 as table_join_t26 using (a) left join table_join_t1 as table_join_t27 using (a) left join table_join_t1 as table_join_t28 using (a) left join table_join_t1 as table_join_t29 using (a) left join table_join_t1 as table_join_t30 using (a) left join table_join_t1 as table_join_t31 using (a) left join table_join_t1 as table_join_t32 using (a) left join table_join_t1 as table_join_t33 using (a) left join table_join_t1 as table_join_t34 using (a) left join table_join_t1 as table_join_t35 using (a) left join table_join_t1 as table_join_t36 using (a) left join table_join_t1 as table_join_t37 using (a) left join table_join_t1 as table_join_t38 using (a) left join table_join_t1 as table_join_t39 using (a) left join table_join_t1 as table_join_t40 using (a) left join table_join_t1 as table_join_t41 using (a) left join table_join_t1 as table_join_t42 using (a) left join table_join_t1 as table_join_t43 using (a) left join table_join_t1 as table_join_t44 using (a) left join table_join_t1 as table_join_t45 using (a) left join table_join_t1 as table_join_t46 using (a) left join table_join_t1 as table_join_t47 using (a) left join table_join_t1 as table_join_t48 using (a) left join table_join_t1 as table_join_t49 using (a) left join table_join_t1 as table_join_t50 using (a) left join table_join_t1 as table_join_t51 using (a) left join table_join_t1 as table_join_t52 using (a) left join table_join_t1 as table_join_t53 using (a) left join table_join_t1 as table_join_t54 using (a) left join table_join_t1 as table_join_t55 using (a) left join table_join_t1 as table_join_t56 using (a) left join table_join_t1 as table_join_t57 using (a) left join table_join_t1 as table_join_t58 using (a) left join table_join_t1 as table_join_t59 using (a) left join table_join_t1 as table_join_t60 using (a) left join table_join_t1 as table_join_t61 using (a) left join table_join_t1 as table_join_t62 using (a) left join table_join_t1 as table_join_t63 using (a) left join table_join_t1 as table_join_t64 using (a) left join table_join_t1 as table_join_t65 using (a);
+ERROR HY000: Too many tables; MySQL can only use XX tables in a join
+drop table table_join_t1;
+CREATE TABLE table_join_t1 (
+a int(11) NOT NULL,
+b int(11) NOT NULL,
+PRIMARY KEY  (a,b)
+) ENGINE=SequoiaDB;
+INSERT INTO table_join_t1 VALUES (1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),(2,3);
+CREATE TABLE table_join_t2 (
+a int(11) default NULL
+) ENGINE=SequoiaDB;
+INSERT INTO table_join_t2 VALUES (2),(3);
+SELECT table_join_t1.a,table_join_t2.a,b FROM table_join_t1,table_join_t2 WHERE table_join_t1.a=table_join_t2.a AND (table_join_t1.a=1 OR table_join_t1.a=2) AND b>=1 AND b<=3;
+a	a	b
+2	2	3
+DROP TABLE table_join_t1, table_join_t2;
+CREATE TABLE table_join_t1 (d DATE NOT NULL);
+CREATE TABLE table_join_t2 (d DATE NOT NULL);
+INSERT INTO table_join_t1 (d) VALUES ('2001-08-01'),('1000-01-01');
+SELECT * FROM table_join_t1 LEFT JOIN table_join_t2 USING (d) WHERE table_join_t2.d IS NULL;
+d
+2001-08-01
+1000-01-01
+SELECT * FROM table_join_t1 LEFT JOIN table_join_t2 USING (d) WHERE d IS NULL;
+d
+SELECT * from table_join_t1 WHERE table_join_t1.d IS NULL;
+d
+SELECT * FROM table_join_t1 WHERE 1/0 IS NULL;
+d
+2001-08-01
+1000-01-01
+Warnings:
+Warning	1365	Division by 0
+Warning	1365	Division by 0
+Warning	1365	Division by 0
+DROP TABLE table_join_t1,table_join_t2;
+CREATE TABLE table_join_t1 (
+Document_ID varchar(50) NOT NULL default '',
+Contractor_ID varchar(6) NOT NULL default '',
+Language_ID char(3) NOT NULL default '',
+Expiration_Date datetime default NULL,
+Publishing_Date datetime default NULL,
+Title text,
+Column_ID varchar(50) NOT NULL default '',
+PRIMARY KEY  (Language_ID,Document_ID,Contractor_ID)
+);
+INSERT INTO table_join_t1 VALUES ('xep80','1','ger','2001-12-31 20:00:00','2001-11-12 10:58:00','Kartenbestellung - jetzt auch online','anle'),('','999998','',NULL,NULL,NULL,'');
+CREATE TABLE table_join_t2 (
+Contractor_ID char(6) NOT NULL default '',
+Language_ID char(3) NOT NULL default '',
+Document_ID char(50) NOT NULL default '',
+CanRead char(1) default NULL,
+Customer_ID int(11) NOT NULL default '0',
+PRIMARY KEY  (Contractor_ID,Language_ID,Document_ID,Customer_ID)
+);
+INSERT INTO table_join_t2 VALUES ('5','ger','xep80','1',999999),('1','ger','xep80','1',999999);
+CREATE TABLE table_join_t3 (
+Language_ID char(3) NOT NULL default '',
+Column_ID char(50) NOT NULL default '',
+Contractor_ID char(6) NOT NULL default '',
+CanRead char(1) default NULL,
+Active char(1) default NULL,
+PRIMARY KEY  (Language_ID,Column_ID,Contractor_ID)
+);
+INSERT INTO table_join_t3 VALUES ('ger','home','1','1','1'),('ger','Test','1','0','0'),('ger','derclu','1','0','0'),('ger','clubne','1','0','0'),('ger','philos','1','0','0'),('ger','clubko','1','0','0'),('ger','clubim','1','1','1'),('ger','progra','1','0','0'),('ger','progvo','1','0','0'),('ger','progsp','1','0','0'),('ger','progau','1','0','0'),('ger','progku','1','0','0'),('ger','progss','1','0','0'),('ger','nachl','1','0','0'),('ger','mitgli','1','0','0'),('ger','mitsu','1','0','0'),('ger','mitbus','1','0','0'),('ger','ergmar','1','1','1'),('ger','home','4','1','1'),('ger','derclu','4','1','1'),('ger','clubne','4','0','0'),('ger','philos','4','1','1'),('ger','clubko','4','1','1'),('ger','clubim','4','1','1'),('ger','progra','4','1','1'),('ger','progvo','4','1','1'),('ger','progsp','4','1','1'),('ger','progau','4','0','0'),('ger','progku','4','1','1'),('ger','progss','4','1','1'),('ger','nachl','4','1','1'),('ger','mitgli','4','0','0'),('ger','mitsu','4','0','0'),('ger','mitbus','4','0','0'),('ger','ergmar','4','1','1'),('ger','progra2','1','0','0'),('ger','archiv','4','1','1'),('ger','anmeld','4','1','1'),('ger','thema','4','1','1'),('ger','edito','4','1','1'),('ger','madis','4','1','1'),('ger','enma','4','1','1'),('ger','madis','1','1','1'),('ger','enma','1','1','1'),('ger','vorsch','4','0','0'),('ger','veranst','4','0','0'),('ger','anle','4','1','1'),('ger','redak','4','1','1'),('ger','nele','4','1','1'),('ger','aukt','4','1','1'),('ger','callcenter','4','1','1'),('ger','anle','1','0','0');
+delete from table_join_t1 where Contractor_ID='999998';
+insert into table_join_t1 (Contractor_ID) Values ('999998');
+SELECT DISTINCT COUNT(table_join_t1.Title) FROM table_join_t1,
+table_join_t2, table_join_t3 WHERE 
+table_join_t1.Document_ID='xep80' AND table_join_t1.Contractor_ID='1' AND 
+table_join_t1.Language_ID='ger' AND '2001-12-21 23:14:24' >= 
+Publishing_Date AND '2001-12-21 23:14:24' <= Expiration_Date AND 
+table_join_t1.Document_ID = table_join_t2.Document_ID AND 
+table_join_t1.Language_ID = table_join_t2.Language_ID AND 
+table_join_t1.Contractor_ID = table_join_t2.Contractor_ID AND ( 
+table_join_t2.Customer_ID = '4'  OR 
+table_join_t2.Customer_ID = '999999'  OR 
+table_join_t2.Customer_ID = '1' )AND table_join_t2.CanRead 
+= '1'  AND table_join_t1.Column_ID=table_join_t3.Column_ID AND 
+table_join_t1.Language_ID=table_join_t3.Language_ID AND ( 
+table_join_t3.Contractor_ID = '4'  OR 
+table_join_t3.Contractor_ID = '999999'  OR 
+table_join_t3.Contractor_ID = '1') AND 
+table_join_t3.CanRead='1' AND table_join_t3.Active='1';
+COUNT(table_join_t1.Title)
+0
+SELECT DISTINCT COUNT(table_join_t1.Title) FROM table_join_t1,
+table_join_t2, table_join_t3 WHERE 
+table_join_t1.Document_ID='xep80' AND table_join_t1.Contractor_ID='1' AND 
+table_join_t1.Language_ID='ger' AND '2001-12-21 23:14:24' >= 
+Publishing_Date AND '2001-12-21 23:14:24' <= Expiration_Date AND 
+table_join_t1.Document_ID = table_join_t2.Document_ID AND 
+table_join_t1.Language_ID = table_join_t2.Language_ID AND 
+table_join_t1.Contractor_ID = table_join_t2.Contractor_ID AND ( 
+table_join_t2.Customer_ID = '4'  OR 
+table_join_t2.Customer_ID = '999999'  OR 
+table_join_t2.Customer_ID = '1' )AND table_join_t2.CanRead 
+= '1'  AND table_join_t1.Column_ID=table_join_t3.Column_ID AND 
+table_join_t1.Language_ID=table_join_t3.Language_ID AND ( 
+table_join_t3.Contractor_ID = '4'  OR 
+table_join_t3.Contractor_ID = '999999'  OR 
+table_join_t3.Contractor_ID = '1') AND 
+table_join_t3.CanRead='1' AND table_join_t3.Active='1';
+COUNT(table_join_t1.Title)
+0
+drop table table_join_t1,table_join_t2,table_join_t3;
+CREATE TABLE table_join_t1 (
+table_join_t1_id int(11) default NULL,
+table_join_t2_id int(11) default NULL,
+type enum('Cost','Percent') default NULL,
+cost_unit enum('Cost','Unit') default NULL,
+min_value double default NULL,
+max_value double default NULL,
+table_join_t3_id int(11) default NULL,
+item_id int(11) default NULL
+) ENGINE=SequoiaDB;
+INSERT INTO table_join_t1 VALUES (12,5,'Percent','Cost',-1,0,-1,-1),(14,4,'Percent','Cost',-1,0,-1,-1),(18,5,'Percent','Cost',-1,0,-1,-1),(19,4,'Percent','Cost',-1,0,-1,-1),(20,5,'Percent','Cost',100,-1,22,291),(21,5,'Percent','Cost',100,-1,18,291),(22,1,'Percent','Cost',100,-1,6,291),(23,1,'Percent','Cost',100,-1,21,291),(24,1,'Percent','Cost',100,-1,9,291),(25,1,'Percent','Cost',100,-1,4,291),(26,1,'Percent','Cost',100,-1,20,291),(27,4,'Percent','Cost',100,-1,7,202),(28,1,'Percent','Cost',50,-1,-1,137),(29,2,'Percent','Cost',100,-1,4,354),(30,2,'Percent','Cost',100,-1,9,137),(93,2,'Cost','Cost',-1,10000000,-1,-1);
+CREATE TABLE table_join_t2 (
+id int(10) unsigned NOT NULL,
+name varchar(255) default NULL,
+PRIMARY KEY  (id)
+) ENGINE=SequoiaDB;
+INSERT INTO table_join_t2 VALUES (1,'s1'),(2,'s2'),(3,'s3'),(4,'s4'),(5,'s5');
+select table_join_t1.*, table_join_t2.*  from table_join_t1, table_join_t2 where table_join_t2.id=table_join_t1.table_join_t2_id limit 2;
+table_join_t1_id	table_join_t2_id	type	cost_unit	min_value	max_value	table_join_t3_id	item_id	id	name
+12	5	Percent	Cost	-1	0	-1	-1	5	s5
+14	4	Percent	Cost	-1	0	-1	-1	4	s4
+drop table table_join_t1,table_join_t2;
+CREATE TABLE table_join_t1 (
+siteid varchar(25) NOT NULL default '',
+emp_id varchar(30) NOT NULL default '',
+rate_code varchar(10) default NULL,
+UNIQUE KEY site_emp (siteid,emp_id),
+KEY siteid (siteid)
+) ENGINE=SequoiaDB;
+INSERT INTO table_join_t1 VALUES ('rivercats','psmith','cust'), ('rivercats','KWalker','cust');
+CREATE TABLE table_join_t2 (
+siteid varchar(25) NOT NULL default '',
+rate_code varchar(10) NOT NULL default '',
+base_rate float NOT NULL default '0',
+PRIMARY KEY  (siteid,rate_code)
+) ENGINE=SequoiaDB;
+INSERT INTO table_join_t2 VALUES ('rivercats','cust',20);
+SELECT emp.rate_code, lr.base_rate FROM table_join_t1 AS emp LEFT JOIN table_join_t2 AS lr USING (siteid, rate_code) WHERE emp.emp_id = 'psmith' AND lr.siteid = 'rivercats';
+rate_code	base_rate
+cust	20
+SELECT emp.rate_code, lr.base_rate FROM table_join_t1 AS emp LEFT JOIN table_join_t2 AS lr USING (siteid, rate_code) WHERE lr.siteid = 'rivercats' AND emp.emp_id = 'psmith';
+rate_code	base_rate
+cust	20
+SELECT rate_code, lr.base_rate FROM table_join_t1 AS emp LEFT JOIN table_join_t2 AS lr USING (siteid, rate_code) WHERE emp.emp_id = 'psmith' AND siteid = 'rivercats';
+rate_code	base_rate
+cust	20
+SELECT rate_code, lr.base_rate FROM table_join_t1 AS emp LEFT JOIN table_join_t2 AS lr USING (siteid, rate_code) WHERE siteid = 'rivercats' AND emp.emp_id = 'psmith';
+rate_code	base_rate
+cust	20
+drop table table_join_t1,table_join_t2;
+CREATE TABLE table_join_t1 (ID INTEGER NOT NULL PRIMARY KEY, Value1 VARCHAR(255));
+CREATE TABLE table_join_t2 (ID INTEGER NOT NULL PRIMARY KEY, Value2 VARCHAR(255));
+INSERT INTO table_join_t1 VALUES (1, 'A');
+INSERT INTO table_join_t2 VALUES (1, 'B');
+SELECT * FROM table_join_t1 NATURAL JOIN table_join_t2 WHERE 1 AND (Value1 = 'A' AND Value2 <> 'B');
+ID	Value1	Value2
+SELECT * FROM table_join_t1 NATURAL JOIN table_join_t2 WHERE 1 AND Value1 = 'A' AND Value2 <> 'B';
+ID	Value1	Value2
+SELECT * FROM table_join_t1 NATURAL JOIN table_join_t2 WHERE (Value1 = 'A' AND Value2 <> 'B') AND 1;
+ID	Value1	Value2
+drop table table_join_t1,table_join_t2;
+CREATE TABLE table_join_t1 (a int);
+CREATE TABLE table_join_t2 (b int);
+CREATE TABLE table_join_t3 (c int);
+SELECT * FROM table_join_t1 NATURAL JOIN table_join_t2 NATURAL JOIN table_join_t3;
+a	b	c
+DROP TABLE table_join_t1, table_join_t2, table_join_t3;
+create table table_join_t1 (i int);
+create table table_join_t2 (i int);
+create table table_join_t3 (i int);
+insert into table_join_t1 values(1),(2);
+insert into table_join_t2 values(2),(3);
+insert into table_join_t3 values (2),(4);
+select * from table_join_t1 natural left join table_join_t2;
+i
+1
+2
+select * from table_join_t1 left join table_join_t2 on (table_join_t1.i=table_join_t2.i);
+i	i
+1	NULL
+2	2
+select * from table_join_t1 natural left join table_join_t2 natural left join table_join_t3;
+i
+1
+2
+select * from table_join_t1 left join table_join_t2 on (table_join_t1.i=table_join_t2.i) left join table_join_t3 on (table_join_t2.i=table_join_t3.i);
+i	i	i
+1	NULL	NULL
+2	2	2
+select * from table_join_t3 natural right join table_join_t2;
+i
+2
+3
+select * from table_join_t3 right join table_join_t2 on (table_join_t3.i=table_join_t2.i);
+i	i
+2	2
+NULL	3
+select * from table_join_t3 natural right join table_join_t2 natural right join table_join_t1;
+i
+1
+2
+select * from table_join_t3 right join table_join_t2 on (table_join_t3.i=table_join_t2.i) right join table_join_t1 on (table_join_t2.i=table_join_t1.i);
+i	i	i
+2	2	2
+NULL	NULL	1
+select * from table_join_t1,table_join_t2 natural left join table_join_t3 order by table_join_t1.i,table_join_t2.i,table_join_t3.i;
+i	i
+1	2
+1	3
+2	2
+2	3
+select * from table_join_t1,table_join_t2 left join table_join_t3 on (table_join_t2.i=table_join_t3.i) order by table_join_t1.i,table_join_t2.i,table_join_t3.i;
+i	i	i
+1	2	2
+1	3	NULL
+2	2	2
+2	3	NULL
+select table_join_t1.i,table_join_t2.i,table_join_t3.i from table_join_t2 natural left join table_join_t3,table_join_t1 order by table_join_t1.i,table_join_t2.i,table_join_t3.i;
+i	i	i
+1	2	2
+1	3	NULL
+2	2	2
+2	3	NULL
+select table_join_t1.i,table_join_t2.i,table_join_t3.i from table_join_t2 left join table_join_t3 on (table_join_t2.i=table_join_t3.i),table_join_t1 order by table_join_t1.i,table_join_t2.i,table_join_t3.i;
+i	i	i
+1	2	2
+1	3	NULL
+2	2	2
+2	3	NULL
+select * from table_join_t1,table_join_t2 natural right join table_join_t3 order by table_join_t1.i,table_join_t2.i,table_join_t3.i;
+i	i
+1	4
+1	2
+2	4
+2	2
+select * from table_join_t1,table_join_t2 right join table_join_t3 on (table_join_t2.i=table_join_t3.i) order by table_join_t1.i,table_join_t2.i,table_join_t3.i;
+i	i	i
+1	NULL	4
+1	2	2
+2	NULL	4
+2	2	2
+select table_join_t1.i,table_join_t2.i,table_join_t3.i from table_join_t2 natural right join table_join_t3,table_join_t1 order by table_join_t1.i,table_join_t2.i,table_join_t3.i;
+i	i	i
+1	NULL	4
+1	2	2
+2	NULL	4
+2	2	2
+select table_join_t1.i,table_join_t2.i,table_join_t3.i from table_join_t2 right join table_join_t3 on (table_join_t2.i=table_join_t3.i),table_join_t1 order by table_join_t1.i,table_join_t2.i,table_join_t3.i;
+i	i	i
+1	NULL	4
+1	2	2
+2	NULL	4
+2	2	2
+drop table table_join_t1,table_join_t2,table_join_t3;
+CREATE TABLE table_join_t1 (a int, b int default 0, c int default 1);
+INSERT INTO table_join_t1 (a) VALUES (1),(2),(3),(4),(5),(6),(7),(8);
+INSERT INTO table_join_t1 (a) SELECT a + 8 FROM table_join_t1;
+INSERT INTO table_join_t1 (a) SELECT a + 16 FROM table_join_t1;
+CREATE TABLE table_join_t2 (a int, d int, e int default 0);
+INSERT INTO table_join_t2 (a, d) VALUES (1,1),(2,2),(3,3),(4,4);
+INSERT INTO table_join_t2 (a, d) SELECT a+4, a+4 FROM table_join_t2;
+INSERT INTO table_join_t2 (a, d) SELECT a+8, a+8 FROM table_join_t2;
+EXPLAIN
+SELECT STRAIGHT_JOIN table_join_t2.e FROM table_join_t1,table_join_t2 WHERE table_join_t2.d=1 AND table_join_t1.b=table_join_t2.e
+ORDER BY table_join_t1.b, table_join_t1.c;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	32	100.00	Using temporary; Using filesort
+1	SIMPLE	table_join_t2	NULL	ALL	NULL	NULL	NULL	NULL	16	6.25	Using where with pushed condition (`test`.`table_join_t2`.`d` = 1); Using join buffer (Block Nested Loop)
+Warnings:
+Note	1003	/* select#1 */ select straight_join `test`.`table_join_t2`.`e` AS `e` from `test`.`table_join_t1` join `test`.`table_join_t2` where ((`test`.`table_join_t2`.`e` = `test`.`table_join_t1`.`b`) and (`test`.`table_join_t2`.`d` = 1)) order by `test`.`table_join_t1`.`b`,`test`.`table_join_t1`.`c`
+SELECT STRAIGHT_JOIN table_join_t2.e FROM table_join_t1,table_join_t2 WHERE table_join_t2.d=1 AND table_join_t1.b=table_join_t2.e
+ORDER BY table_join_t1.b, table_join_t1.c;
+e
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+DROP TABLE table_join_t1,table_join_t2;
+create table table_join_t1 (c int, b int);
+create table table_join_t2 (a int, b int);
+create table table_join_t3 (b int, c int);
+create table table_join_t4 (y int, c int);
+create table table_join_t5 (y int, z int);
+create table table_join_t6 (a int, c int);
+insert into table_join_t1 values (10,1);
+insert into table_join_t1 values (3 ,1);
+insert into table_join_t1 values (3 ,2);
+insert into table_join_t2 values (2, 1);
+insert into table_join_t3 values (1, 3);
+insert into table_join_t3 values (1,10);
+insert into table_join_t4 values (11,3);
+insert into table_join_t4 values (2, 3);
+insert into table_join_t5 values (11,4);
+insert into table_join_t6 values (2, 3);
+create algorithm=merge view v1a as
+select * from table_join_t1 natural join table_join_t2;
+create algorithm=merge view v1b(a,b,c) as
+select * from table_join_t1 natural join table_join_t2;
+create algorithm=merge view v1c as
+select b as a, c as b, a as c from table_join_t1 natural join table_join_t2;
+create algorithm=merge view v1d(b, a, c) as
+select a as c, c as b, b as a from table_join_t1 natural join table_join_t2;
+create algorithm=merge view v2a as
+select table_join_t1.c, table_join_t1.b, table_join_t2.a from table_join_t1 join (table_join_t2 join table_join_t4 on b + 1 = y) on table_join_t1.c = table_join_t4.c;
+create algorithm=merge view v2b as
+select table_join_t1.c as b, table_join_t1.b as a, table_join_t2.a as c
+from table_join_t1 join (table_join_t2 join table_join_t4 on b + 1 = y) on table_join_t1.c = table_join_t4.c;
+create algorithm=merge view v3a as
+select * from table_join_t1 natural join table_join_t2 natural join table_join_t3;
+create algorithm=merge view v3b as
+select * from table_join_t1 natural join (table_join_t2 natural join table_join_t3);
+create algorithm=merge view v4 as
+select * from v2a natural join v3a;
+select * from (table_join_t1 natural join table_join_t2) natural join (table_join_t3 natural join table_join_t4);
+b	c	a	y
+1	3	2	11
+1	3	2	2
+select * from (table_join_t1 natural join table_join_t2) natural left join (table_join_t3 natural join table_join_t4);
+b	c	a	y
+1	10	2	NULL
+1	3	2	11
+1	3	2	2
+select * from (table_join_t3 natural join table_join_t4) natural right join (table_join_t1 natural join table_join_t2);
+b	c	a	y
+1	10	2	NULL
+1	3	2	11
+1	3	2	2
+select * from (table_join_t1 natural left join table_join_t2) natural left join (table_join_t3 natural left join table_join_t4);
+b	c	a	y
+1	10	2	NULL
+1	3	2	11
+1	3	2	2
+2	3	NULL	NULL
+select * from (table_join_t4 natural right join table_join_t3) natural right join (table_join_t2 natural right join table_join_t1);
+b	c	a	y
+1	10	2	NULL
+1	3	2	11
+1	3	2	2
+2	3	NULL	NULL
+select * from table_join_t1 natural join table_join_t2 natural join table_join_t3 natural join table_join_t4;
+c	b	a	y
+3	1	2	11
+3	1	2	2
+select * from ((table_join_t1 natural join table_join_t2) natural join table_join_t3) natural join table_join_t4;
+c	b	a	y
+3	1	2	11
+3	1	2	2
+select * from table_join_t1 natural join (table_join_t2 natural join (table_join_t3 natural join table_join_t4));
+c	b	a	y
+3	1	2	11
+3	1	2	2
+select * from table_join_t5 natural right join (table_join_t4 natural right join ((table_join_t2 natural right join table_join_t1) natural right join table_join_t3));
+y	c	b	a	z
+11	3	1	2	4
+2	3	1	2	NULL
+NULL	10	1	2	NULL
+select * from (table_join_t1 natural join table_join_t2), (table_join_t3 natural join table_join_t4);
+b	c	a	c	b	y
+1	10	2	3	1	11
+1	3	2	3	1	11
+1	10	2	3	1	2
+1	3	2	3	1	2
+select * from table_join_t5 natural join ((table_join_t1 natural join table_join_t2), (table_join_t3 natural join table_join_t4));
+y	z	b	c	a	c	b
+11	4	1	10	2	3	1
+11	4	1	3	2	3	1
+select * from  ((table_join_t1 natural join table_join_t2),  (table_join_t3 natural join table_join_t4)) natural join table_join_t5;
+y	b	c	a	c	b	z
+11	1	10	2	3	1	4
+11	1	3	2	3	1	4
+select * from table_join_t5 natural join ((table_join_t1 natural join table_join_t2) cross join (table_join_t3 natural join table_join_t4));
+y	z	b	c	a	c	b
+11	4	1	10	2	3	1
+11	4	1	3	2	3	1
+select * from  ((table_join_t1 natural join table_join_t2) cross join (table_join_t3 natural join table_join_t4)) natural join table_join_t5;
+y	b	c	a	c	b	z
+11	1	10	2	3	1	4
+11	1	3	2	3	1	4
+select * from (table_join_t1 join table_join_t2 using (b)) join (table_join_t3 join table_join_t4 using (c)) using (c);
+c	b	a	b	y
+3	1	2	1	11
+3	1	2	1	2
+select * from (table_join_t1 join table_join_t2 using (b)) natural join (table_join_t3 join table_join_t4 using (c));
+b	c	a	y
+1	3	2	11
+1	3	2	2
+select a,b,c from (table_join_t1 natural join table_join_t2) natural join (table_join_t3 natural join table_join_t4)
+where b + 1 = y or b + 10 = y group by b,c,a having min(b) < max(y) order by a;
+a	b	c
+2	1	3
+select * from (table_join_t1 natural join table_join_t2) natural left join (table_join_t3 natural join table_join_t4)
+where b + 1 = y or b + 10 = y group by b,c,a,y having min(b) < max(y) order by a, y;
+b	c	a	y
+1	3	2	2
+1	3	2	11
+select * from (table_join_t3 natural join table_join_t4) natural right join (table_join_t1 natural join table_join_t2)
+where b + 1 = y or b + 10 = y group by b,c,a,y having min(b) < max(y) order by a, y;
+b	c	a	y
+1	3	2	2
+1	3	2	11
+select * from table_join_t1 natural join table_join_t2 where table_join_t1.c > table_join_t2.a;
+b	c	a
+1	10	2
+1	3	2
+select * from table_join_t1 natural join table_join_t2 where table_join_t1.b > table_join_t2.b;
+b	c	a
+select * from table_join_t1 natural left join (table_join_t4 natural join table_join_t5) where table_join_t5.z is not NULL;
+c	b	y	z
+3	1	11	4
+3	2	11	4
+select * from table_join_t1 join (table_join_t2 join table_join_t4 on b + 1 = y) on table_join_t1.c = table_join_t4.c;
+c	b	a	b	y	c
+3	1	2	1	2	3
+3	2	2	1	2	3
+select * from (table_join_t2 join table_join_t4 on b + 1 = y) join table_join_t1 on table_join_t1.c = table_join_t4.c;
+a	b	y	c	c	b
+2	1	2	3	3	1
+2	1	2	3	3	2
+select * from table_join_t1 natural join (table_join_t2 join table_join_t4 on b + 1 = y);
+c	b	a	y
+3	1	2	2
+select * from (table_join_t1 cross join table_join_t2) join (table_join_t3 cross join table_join_t4) on (a < y and table_join_t2.b < table_join_t3.c);
+c	b	a	b	b	c	y	c
+10	1	2	1	1	3	11	3
+10	1	2	1	1	10	11	3
+3	1	2	1	1	3	11	3
+3	1	2	1	1	10	11	3
+3	2	2	1	1	3	11	3
+3	2	2	1	1	10	11	3
+select * from (table_join_t1, table_join_t2) join (table_join_t3, table_join_t4) on (a < y and table_join_t2.b < table_join_t3.c);
+c	b	a	b	b	c	y	c
+10	1	2	1	1	3	11	3
+10	1	2	1	1	10	11	3
+3	1	2	1	1	3	11	3
+3	1	2	1	1	10	11	3
+3	2	2	1	1	3	11	3
+3	2	2	1	1	10	11	3
+select * from (table_join_t1 natural join table_join_t2) join (table_join_t3 natural join table_join_t4) on a = y;
+b	c	a	c	b	y
+1	10	2	3	1	2
+1	3	2	3	1	2
+select * from ((table_join_t3 join (table_join_t1 join table_join_t2 on c > a) on table_join_t3.b < table_join_t2.a) join table_join_t4 on y > table_join_t1.c) join table_join_t5 on z = table_join_t1.b + 3;
+b	c	c	b	a	b	y	c	y	z
+1	3	10	1	2	1	11	3	11	4
+1	10	10	1	2	1	11	3	11	4
+1	3	3	1	2	1	11	3	11	4
+1	10	3	1	2	1	11	3	11	4
+select * from table_join_t1 natural join table_join_t2 where table_join_t1.b > 0;
+b	c	a
+1	10	2
+1	3	2
+select * from table_join_t1 natural join (table_join_t4 natural join table_join_t5) where table_join_t4.y > 7;
+c	b	y	z
+3	1	11	4
+3	2	11	4
+select * from (table_join_t4 natural join table_join_t5) natural join table_join_t1 where table_join_t4.y > 7;
+c	y	z	b
+3	11	4	1
+3	11	4	2
+select * from table_join_t1 natural left join (table_join_t4 natural join table_join_t5) where table_join_t4.y > 7;
+c	b	y	z
+3	1	11	4
+3	2	11	4
+select * from (table_join_t4 natural join table_join_t5) natural right join table_join_t1 where table_join_t4.y > 7;
+c	b	y	z
+3	1	11	4
+3	2	11	4
+select * from (table_join_t1 natural join table_join_t2) join (table_join_t3 natural join table_join_t4) on table_join_t1.b = table_join_t3.b;
+b	c	a	c	b	y
+1	10	2	3	1	11
+1	10	2	3	1	2
+1	3	2	3	1	11
+1	3	2	3	1	2
+select table_join_t1.*, table_join_t2.* from table_join_t1 natural join table_join_t2;
+c	b	a	b
+10	1	2	1
+3	1	2	1
+select table_join_t1.*, table_join_t2.*, table_join_t3.*, table_join_t4.* from (table_join_t1 natural join table_join_t2) natural join (table_join_t3 natural join table_join_t4);
+c	b	a	b	b	c	y	c
+3	1	2	1	1	3	11	3
+3	1	2	1	1	3	2	3
+select * from (select * from table_join_t1 natural join table_join_t2) as table_join_t12
+natural join
+(select * from table_join_t3 natural join table_join_t4) as table_join_t34;
+b	c	a	y
+1	3	2	11
+1	3	2	2
+select * from (select * from table_join_t1 natural join table_join_t2) as table_join_t12
+natural left join
+(select * from table_join_t3 natural join table_join_t4) as table_join_t34;
+b	c	a	y
+1	10	2	NULL
+1	3	2	11
+1	3	2	2
+select * from (select * from table_join_t3 natural join table_join_t4) as table_join_t34
+natural right join
+(select * from table_join_t1 natural join table_join_t2) as table_join_t12;
+b	c	a	y
+1	10	2	NULL
+1	3	2	11
+1	3	2	2
+select * from v1a;
+b	c	a
+1	10	2
+1	3	2
+select * from v1b;
+a	b	c
+1	10	2
+1	3	2
+select * from v1c;
+a	b	c
+1	10	2
+1	3	2
+select * from v1d;
+b	a	c
+2	10	1
+2	3	1
+select * from v2a;
+c	b	a
+3	1	2
+3	2	2
+select * from v2b;
+b	a	c
+3	1	2
+3	2	2
+select * from v3a;
+b	c	a
+1	10	2
+1	3	2
+select * from v3b;
+c	b	a
+10	1	2
+3	1	2
+select * from v4;
+c	b	a
+3	1	2
+select * from v1a natural join v2a;
+b	c	a
+1	3	2
+select v2a.* from v1a natural join v2a;
+c	b	a
+3	1	2
+select * from v1b join v2a on v1b.b = v2a.c;
+a	b	c	c	b	a
+1	3	2	3	1	2
+1	3	2	3	2	2
+select * from v1c join v2a on v1c.b = v2a.c;
+a	b	c	c	b	a
+1	3	2	3	1	2
+1	3	2	3	2	2
+select * from v1d join v2a on v1d.a = v2a.c;
+b	a	c	c	b	a
+2	3	1	3	1	2
+2	3	1	3	2	2
+select * from v1a join (table_join_t3 natural join table_join_t4) on a = y;
+b	c	a	c	b	y
+1	10	2	3	1	2
+1	3	2	3	1	2
+select * from table_join_t1 natural join (table_join_t3 cross join table_join_t4);
+ERROR 23000: Column 'c' in from clause is ambiguous
+select * from (table_join_t3 cross join table_join_t4) natural join table_join_t1;
+ERROR 23000: Column 'c' in from clause is ambiguous
+select * from table_join_t1 join (table_join_t2, table_join_t3) using (b);
+ERROR 23000: Column 'b' in from clause is ambiguous
+select * from ((table_join_t1 natural join table_join_t2), (table_join_t3 natural join table_join_t4)) natural join table_join_t6;
+ERROR 23000: Column 'c' in from clause is ambiguous
+select * from ((table_join_t1 natural join table_join_t2), (table_join_t3 natural join table_join_t4)) natural join table_join_t6;
+ERROR 23000: Column 'c' in from clause is ambiguous
+select * from table_join_t6 natural join ((table_join_t1 natural join table_join_t2),  (table_join_t3 natural join table_join_t4));
+ERROR 23000: Column 'c' in from clause is ambiguous
+select * from (table_join_t1 join table_join_t2 on table_join_t1.b=table_join_t2.b) natural join (table_join_t3 natural join table_join_t4);
+ERROR 23000: Column 'b' in from clause is ambiguous
+select * from  (table_join_t3 natural join table_join_t4) natural join (table_join_t1 join table_join_t2 on table_join_t1.b=table_join_t2.b);
+ERROR 23000: Column 'b' in from clause is ambiguous
+select * from (table_join_t3 join (table_join_t4 natural join table_join_t5) on (b < z))
+natural join
+(table_join_t1 natural join table_join_t2);
+ERROR 23000: Column 'c' in from clause is ambiguous
+select * from (table_join_t1 natural join table_join_t2) natural join (table_join_t3 join (table_join_t4 natural join table_join_t5) on (b < z));
+ERROR 23000: Column 'c' in from clause is ambiguous
+select table_join_t1.b from v1a;
+ERROR 42S22: Unknown column 'table_join_t1.b' in 'field list'
+select * from v1a join v1b on table_join_t1.b = table_join_t2.b;
+ERROR 42S22: Unknown column 'table_join_t1.b' in 'on clause'
+select 
+statistics.TABLE_NAME, statistics.COLUMN_NAME, statistics.TABLE_CATALOG, statistics.TABLE_SCHEMA, statistics.NON_UNIQUE, statistics.INDEX_SCHEMA, statistics.INDEX_NAME, statistics.SEQ_IN_INDEX, statistics.COLLATION, statistics.SUB_PART, statistics.PACKED, statistics.NULLABLE, statistics.INDEX_TYPE, statistics.COMMENT, 
+columns.TABLE_CATALOG, columns.TABLE_SCHEMA, columns.COLUMN_DEFAULT, columns.IS_NULLABLE, columns.DATA_TYPE, columns.CHARACTER_MAXIMUM_LENGTH, columns.CHARACTER_OCTET_LENGTH, columns.NUMERIC_PRECISION, columns.NUMERIC_SCALE, columns.CHARACTER_SET_NAME, columns.COLLATION_NAME, columns.COLUMN_TYPE, columns.COLUMN_KEY, columns.EXTRA, columns.COLUMN_COMMENT
+from information_schema.statistics join information_schema.columns using(table_name,column_name) where table_name='user';
+TABLE_NAME	COLUMN_NAME	TABLE_CATALOG	TABLE_SCHEMA	NON_UNIQUE	INDEX_SCHEMA	INDEX_NAME	SEQ_IN_INDEX	COLLATION	SUB_PART	PACKED	NULLABLE	INDEX_TYPE	COMMENT	TABLE_CATALOG	TABLE_SCHEMA	COLUMN_DEFAULT	IS_NULLABLE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	CHARACTER_SET_NAME	COLLATION_NAME	COLUMN_TYPE	COLUMN_KEY	EXTRA	COLUMN_COMMENT
+user	Host	def	mysql	0	mysql	PRIMARY	1	A	NULL	NULL		BTREE		def	mysql		NO	char	60	180	NULL	NULL	utf8	utf8_bin	char(60)	PRI		
+user	User	def	mysql	0	mysql	PRIMARY	2	A	NULL	NULL		BTREE		def	mysql		NO	char	32	96	NULL	NULL	utf8	utf8_bin	char(32)	PRI		
+drop table table_join_t1;
+drop table table_join_t2;
+drop table table_join_t3;
+drop table table_join_t4;
+drop table table_join_t5;
+drop table table_join_t6;
+drop view v1a;
+drop view v1b;
+drop view v1c;
+drop view v1d;
+drop view v2a;
+drop view v2b;
+drop view v3a;
+drop view v3b;
+drop view v4;
+create table table_join_t1 (a1 int, a2 int);
+create table table_join_t2 (a1 int, b int);
+create table table_join_t3 (c1 int, c2 int);
+create table table_join_t4 (c2 int);
+insert into table_join_t1 values (1,1);
+insert into table_join_t2 values (1,1);
+insert into table_join_t3 values (1,1);
+insert into table_join_t4 values (1);
+select * from table_join_t1 join table_join_t2 using (a1) join table_join_t3 on b=c1 join table_join_t4 using (c2);
+c2	a1	a2	b	c1
+1	1	1	1	1
+select * from table_join_t3 join (table_join_t1 join table_join_t2 using (a1)) on b=c1 join table_join_t4 using (c2);
+c2	c1	a1	a2	b
+1	1	1	1	1
+select a2 from table_join_t1 join table_join_t2 using (a1) join table_join_t3 on b=c1 join table_join_t4 using (c2);
+a2
+1
+select a2 from table_join_t3 join (table_join_t1 join table_join_t2 using (a1)) on b=c1 join table_join_t4 using (c2);
+a2
+1
+select a2 from ((table_join_t1 join table_join_t2 using (a1)) join table_join_t3 on b=c1) join table_join_t4 using (c2);
+a2
+1
+select a2 from ((table_join_t1 natural join table_join_t2) join table_join_t3 on b=c1) natural join table_join_t4;
+a2
+1
+drop table table_join_t1,table_join_t2,table_join_t3,table_join_t4;
+create table table_join_t1 (c int, b int);
+create table table_join_t2 (a int, b int);
+create table table_join_t3 (b int, c int);
+create table table_join_t4 (y int, c int);
+create table table_join_t5 (y int, z int);
+insert into table_join_t1 values (3,2);
+insert into table_join_t2 values (1,2);
+insert into table_join_t3 values (2,3);
+insert into table_join_t4 values (1,3);
+insert into table_join_t5 values (1,4);
+prepare stmtable_join_t1 from "select * from ((table_join_t3 natural join (table_join_t1 natural join table_join_t2))
+natural join table_join_t4) natural join table_join_t5";
+execute stmtable_join_t1;
+y	c	b	a	z
+1	3	2	1	4
+select * from ((table_join_t3 natural join (table_join_t1 natural join table_join_t2)) natural join table_join_t4)
+natural join table_join_t5;
+y	c	b	a	z
+1	3	2	1	4
+drop table table_join_t1, table_join_t2, table_join_t3, table_join_t4, table_join_t5;
+CREATE TABLE table_join_t1 (ID INTEGER, Name VARCHAR(50));
+CREATE TABLE table_join_t2 (Test_ID INTEGER);
+CREATE VIEW v1 (Test_ID, Description) AS SELECT ID, Name FROM table_join_t1;
+CREATE TABLE tv1 SELECT Description AS Name FROM v1 JOIN table_join_t2
+USING (Test_ID);
+DESCRIBE tv1;
+Field	Type	Null	Key	Default	Extra
+Name	varchar(50)	YES		NULL	
+CREATE TABLE tv2 SELECT Description AS Name FROM v1 JOIN table_join_t2
+ON v1.Test_ID = table_join_t2.Test_ID;
+DESCRIBE tv2;
+Field	Type	Null	Key	Default	Extra
+Name	varchar(50)	YES		NULL	
+DROP VIEW v1;
+DROP TABLE table_join_t1,table_join_t2,tv1,tv2;
+create table table_join_t1 (a int, b int);
+insert into table_join_t1 values 
+(NULL, 1),
+(NULL, 2),
+(NULL, 3),
+(NULL, 4);
+create table table_join_t2 (a int not null, primary key(a));
+insert into table_join_t2 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
+create table table_join_t3 (a int not null, primary key(a));
+insert into table_join_t3 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
+flush status;
+select * from table_join_t1, table_join_t2, table_join_t3 where table_join_t3.a=table_join_t1.a and table_join_t2.a=table_join_t1.b;
+a	b	a	a
+explain select * from table_join_t1, table_join_t2, table_join_t3 where table_join_t3.a=table_join_t1.a and table_join_t2.a=table_join_t1.b;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	0	0.00	Using where with pushed condition ((`test`.`table_join_t1`.`b` is not null) and (`test`.`table_join_t1`.`a` is not null))
+1	SIMPLE	table_join_t2	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t1.b	1	100.00	NULL
+1	SIMPLE	table_join_t3	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t1.a	1	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`a` AS `a`,`test`.`table_join_t1`.`b` AS `b`,`test`.`table_join_t2`.`a` AS `a`,`test`.`table_join_t3`.`a` AS `a` from `test`.`table_join_t1` join `test`.`table_join_t2` join `test`.`table_join_t3` where ((`test`.`table_join_t2`.`a` = `test`.`table_join_t1`.`b`) and (`test`.`table_join_t3`.`a` = `test`.`table_join_t1`.`a`))
+We expect rnd_next=5, and read_key must be 0 because of short-cutting:
+show status like 'Handler_read%';
+Variable_name	Value
+Handler_read_first	0
+Handler_read_key	0
+Handler_read_last	0
+Handler_read_next	0
+Handler_read_prev	0
+Handler_read_rnd	0
+Handler_read_rnd_next	1
+drop table table_join_t1, table_join_t2, table_join_t3;
+create table table_join_t1 (a int);
+insert into table_join_t1 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
+create table table_join_t2 (a int, b int, filler char(100), key(a), key(b));
+create table table_join_t3 (a int, b int, filler char(100), key(a), key(b));
+insert into table_join_t2 
+select @a:= A.a + 10*(B.a + 10*C.a), @a, 'filler' from table_join_t1 A, table_join_t1 B, table_join_t1 C;
+insert into table_join_t3 select * from table_join_t2 where a < 800;
+explain select * from table_join_t2,table_join_t3 where table_join_t2.a < 200 and table_join_t2.b=table_join_t3.b;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t2	NULL	range	a,b	a	5	NULL	1	100.00	Using where with pushed condition ((`test`.`table_join_t2`.`a` < 200) and (`test`.`table_join_t2`.`b` is not null))
+1	SIMPLE	table_join_t3	NULL	ref	b	b	5	test.table_join_t2.b	11	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t2`.`a` AS `a`,`test`.`table_join_t2`.`b` AS `b`,`test`.`table_join_t2`.`filler` AS `filler`,`test`.`table_join_t3`.`a` AS `a`,`test`.`table_join_t3`.`b` AS `b`,`test`.`table_join_t3`.`filler` AS `filler` from `test`.`table_join_t2` join `test`.`table_join_t3` where ((`test`.`table_join_t3`.`b` = `test`.`table_join_t2`.`b`) and (`test`.`table_join_t2`.`a` < 200))
+drop table table_join_t1, table_join_t2, table_join_t3;
+create table table_join_t1 (a int);
+insert into table_join_t1 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
+create table table_join_t2 (a int, b int, primary key(a));
+insert into table_join_t2 select @v:=A.a+10*B.a, @v  from table_join_t1 A, table_join_t1 B;
+explain select * from table_join_t1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	10	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`a` AS `a` from `test`.`table_join_t1`
+show status like '%cost%';
+Variable_name	Value
+Last_query_cost	11.999000
+select 'The cost of accessing table_join_t1 (dont care if it changes' '^';
+The cost of accessing table_join_t1 (dont care if it changes
+The cost of accessing table_join_t1 (dont care if it changes^
+select 'vv: Following query must use ALL(table_join_t1), eq_ref(A), eq_ref(B): vv' Z;
+Z
+vv: Following query must use ALL(table_join_t1), eq_ref(A), eq_ref(B): vv
+explain select * from table_join_t1, table_join_t2 a, table_join_t2 b where a.a = table_join_t1.a and b.a=a.b;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	10	100.00	Using where with pushed condition (`test`.`table_join_t1`.`a` is not null)
+1	SIMPLE	a	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t1.a	1	100.00	Using where with pushed condition (`test`.`a`.`b` is not null)
+1	SIMPLE	b	NULL	eq_ref	PRIMARY	PRIMARY	4	test.a.b	1	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`a` AS `a`,`test`.`a`.`a` AS `a`,`test`.`a`.`b` AS `b`,`test`.`b`.`a` AS `a`,`test`.`b`.`b` AS `b` from `test`.`table_join_t1` join `test`.`table_join_t2` `a` join `test`.`table_join_t2` `b` where ((`test`.`b`.`a` = `test`.`a`.`b`) and (`test`.`a`.`a` = `test`.`table_join_t1`.`a`))
+show status like '%cost%';
+Variable_name	Value
+Last_query_cost	35.999000
+select '^^: The above should be ~= 20 + cost(select * from table_join_t1). Value less than 20 is an error' Z;
+Z
+^^: The above should be ~= 20 + cost(select * from table_join_t1). Value less than 20 is an error
+drop table table_join_t1, table_join_t2;
+CREATE TABLE table_join_t1 (a INT PRIMARY KEY, b INT);
+CREATE TABLE table_join_t2 (c INT PRIMARY KEY, d INT);
+INSERT INTO table_join_t1 VALUES(1,NULL),(2,NULL),(3,NULL),(4,NULL);
+INSERT INTO table_join_t1 SELECT a + 4, b FROM table_join_t1;
+INSERT INTO table_join_t1 SELECT a + 8, b FROM table_join_t1;
+INSERT INTO table_join_t1 SELECT a + 16, b FROM table_join_t1;
+INSERT INTO table_join_t1 SELECT a + 32, b FROM table_join_t1;
+INSERT INTO table_join_t1 SELECT a + 64, b FROM table_join_t1;
+INSERT INTO table_join_t2 SELECT a, b FROM table_join_t1;
+EXPLAIN SELECT * FROM table_join_t1 JOIN table_join_t2 ON b=c ORDER BY a LIMIT 2;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	index	NULL	PRIMARY	4	NULL	2	100.00	Using where with pushed condition (`test`.`table_join_t1`.`b` is not null)
+1	SIMPLE	table_join_t2	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t1.b	1	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`a` AS `a`,`test`.`table_join_t1`.`b` AS `b`,`test`.`table_join_t2`.`c` AS `c`,`test`.`table_join_t2`.`d` AS `d` from `test`.`table_join_t1` join `test`.`table_join_t2` where (`test`.`table_join_t2`.`c` = `test`.`table_join_t1`.`b`) order by `test`.`table_join_t1`.`a` limit 2
+EXPLAIN SELECT * FROM table_join_t1 JOIN table_join_t2 ON a=c ORDER BY a LIMIT 2;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	index	PRIMARY	PRIMARY	4	NULL	2	100.00	NULL
+1	SIMPLE	table_join_t2	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t1.a	1	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`a` AS `a`,`test`.`table_join_t1`.`b` AS `b`,`test`.`table_join_t2`.`c` AS `c`,`test`.`table_join_t2`.`d` AS `d` from `test`.`table_join_t1` join `test`.`table_join_t2` where (`test`.`table_join_t2`.`c` = `test`.`table_join_t1`.`a`) order by `test`.`table_join_t1`.`a` limit 2
+SELECT * FROM table_join_t1 JOIN table_join_t2 ON b=c ORDER BY a LIMIT 2;
+a	b	c	d
+SELECT * FROM table_join_t1 JOIN table_join_t2 ON a=c ORDER BY a LIMIT 2;
+a	b	c	d
+1	NULL	1	NULL
+2	NULL	2	NULL
+EXPLAIN SELECT * FROM table_join_t1 JOIN table_join_t2 ON b=c ORDER BY a;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	130	100.00	Using where with pushed condition (`test`.`table_join_t1`.`b` is not null); Using filesort
+1	SIMPLE	table_join_t2	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t1.b	1	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`a` AS `a`,`test`.`table_join_t1`.`b` AS `b`,`test`.`table_join_t2`.`c` AS `c`,`test`.`table_join_t2`.`d` AS `d` from `test`.`table_join_t1` join `test`.`table_join_t2` where (`test`.`table_join_t2`.`c` = `test`.`table_join_t1`.`b`) order by `test`.`table_join_t1`.`a`
+EXPLAIN SELECT * FROM table_join_t1 JOIN table_join_t2 ON a=c ORDER BY a;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	PRIMARY	NULL	NULL	NULL	130	100.00	Using filesort
+1	SIMPLE	table_join_t2	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t1.a	1	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`a` AS `a`,`test`.`table_join_t1`.`b` AS `b`,`test`.`table_join_t2`.`c` AS `c`,`test`.`table_join_t2`.`d` AS `d` from `test`.`table_join_t1` join `test`.`table_join_t2` where (`test`.`table_join_t2`.`c` = `test`.`table_join_t1`.`a`) order by `test`.`table_join_t1`.`a`
+SELECT * FROM table_join_t1 JOIN table_join_t2 ON b=c ORDER BY a;
+a	b	c	d
+SELECT * FROM table_join_t1 JOIN table_join_t2 ON a=c ORDER BY a;
+a	b	c	d
+1	NULL	1	NULL
+2	NULL	2	NULL
+3	NULL	3	NULL
+4	NULL	4	NULL
+5	NULL	5	NULL
+6	NULL	6	NULL
+7	NULL	7	NULL
+8	NULL	8	NULL
+9	NULL	9	NULL
+10	NULL	10	NULL
+11	NULL	11	NULL
+12	NULL	12	NULL
+13	NULL	13	NULL
+14	NULL	14	NULL
+15	NULL	15	NULL
+16	NULL	16	NULL
+17	NULL	17	NULL
+18	NULL	18	NULL
+19	NULL	19	NULL
+20	NULL	20	NULL
+21	NULL	21	NULL
+22	NULL	22	NULL
+23	NULL	23	NULL
+24	NULL	24	NULL
+25	NULL	25	NULL
+26	NULL	26	NULL
+27	NULL	27	NULL
+28	NULL	28	NULL
+29	NULL	29	NULL
+30	NULL	30	NULL
+31	NULL	31	NULL
+32	NULL	32	NULL
+33	NULL	33	NULL
+34	NULL	34	NULL
+35	NULL	35	NULL
+36	NULL	36	NULL
+37	NULL	37	NULL
+38	NULL	38	NULL
+39	NULL	39	NULL
+40	NULL	40	NULL
+41	NULL	41	NULL
+42	NULL	42	NULL
+43	NULL	43	NULL
+44	NULL	44	NULL
+45	NULL	45	NULL
+46	NULL	46	NULL
+47	NULL	47	NULL
+48	NULL	48	NULL
+49	NULL	49	NULL
+50	NULL	50	NULL
+51	NULL	51	NULL
+52	NULL	52	NULL
+53	NULL	53	NULL
+54	NULL	54	NULL
+55	NULL	55	NULL
+56	NULL	56	NULL
+57	NULL	57	NULL
+58	NULL	58	NULL
+59	NULL	59	NULL
+60	NULL	60	NULL
+61	NULL	61	NULL
+62	NULL	62	NULL
+63	NULL	63	NULL
+64	NULL	64	NULL
+65	NULL	65	NULL
+66	NULL	66	NULL
+67	NULL	67	NULL
+68	NULL	68	NULL
+69	NULL	69	NULL
+70	NULL	70	NULL
+71	NULL	71	NULL
+72	NULL	72	NULL
+73	NULL	73	NULL
+74	NULL	74	NULL
+75	NULL	75	NULL
+76	NULL	76	NULL
+77	NULL	77	NULL
+78	NULL	78	NULL
+79	NULL	79	NULL
+80	NULL	80	NULL
+81	NULL	81	NULL
+82	NULL	82	NULL
+83	NULL	83	NULL
+84	NULL	84	NULL
+85	NULL	85	NULL
+86	NULL	86	NULL
+87	NULL	87	NULL
+88	NULL	88	NULL
+89	NULL	89	NULL
+90	NULL	90	NULL
+91	NULL	91	NULL
+92	NULL	92	NULL
+93	NULL	93	NULL
+94	NULL	94	NULL
+95	NULL	95	NULL
+96	NULL	96	NULL
+97	NULL	97	NULL
+98	NULL	98	NULL
+99	NULL	99	NULL
+100	NULL	100	NULL
+101	NULL	101	NULL
+102	NULL	102	NULL
+103	NULL	103	NULL
+104	NULL	104	NULL
+105	NULL	105	NULL
+106	NULL	106	NULL
+107	NULL	107	NULL
+108	NULL	108	NULL
+109	NULL	109	NULL
+110	NULL	110	NULL
+111	NULL	111	NULL
+112	NULL	112	NULL
+113	NULL	113	NULL
+114	NULL	114	NULL
+115	NULL	115	NULL
+116	NULL	116	NULL
+117	NULL	117	NULL
+118	NULL	118	NULL
+119	NULL	119	NULL
+120	NULL	120	NULL
+121	NULL	121	NULL
+122	NULL	122	NULL
+123	NULL	123	NULL
+124	NULL	124	NULL
+125	NULL	125	NULL
+126	NULL	126	NULL
+127	NULL	127	NULL
+128	NULL	128	NULL
+DROP TABLE IF EXISTS table_join_t1,table_join_t2;
+#
+# Bug #42116: Mysql crash on specific query
+#
+CREATE TABLE table_join_t1 (a INT);
+CREATE TABLE table_join_t2 (a INT);
+CREATE TABLE table_join_t3 (a INT, INDEX (a));
+CREATE TABLE table_join_t4 (a INT);
+CREATE TABLE table_join_t5 (a INT);
+CREATE TABLE table_join_t6 (a INT);
+INSERT INTO table_join_t1 VALUES (1), (1), (1);
+INSERT INTO table_join_t2 VALUES
+(2), (2), (2), (2), (2), (2), (2), (2), (2), (2);
+INSERT INTO table_join_t3 VALUES
+(3), (3), (3), (3), (3), (3), (3), (3), (3), (3);
+EXPLAIN
+SELECT * 
+FROM 
+table_join_t1 JOIN table_join_t2 ON table_join_t1.a = table_join_t2.a 
+LEFT JOIN 
+(
+(
+table_join_t3 LEFT JOIN table_join_t4 ON table_join_t3.a = table_join_t4.a
+) 
+LEFT JOIN 
+(
+table_join_t5 LEFT JOIN table_join_t6 ON table_join_t5.a = table_join_t6.a
+) 
+ON table_join_t4.a = table_join_t5.a
+) 
+ON table_join_t1.a = table_join_t3.a;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
+1	SIMPLE	table_join_t2	NULL	ALL	NULL	NULL	NULL	NULL	10	10.00	Using where; Using join buffer (Block Nested Loop)
+1	SIMPLE	table_join_t3	NULL	ref	a	a	5	test.table_join_t1.a	2	100.00	Using where
+1	SIMPLE	table_join_t4	NULL	ALL	NULL	NULL	NULL	NULL	0	0.00	Using where
+1	SIMPLE	table_join_t5	NULL	ALL	NULL	NULL	NULL	NULL	0	0.00	Using where
+1	SIMPLE	table_join_t6	NULL	ALL	NULL	NULL	NULL	NULL	0	0.00	Using where
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`a` AS `a`,`test`.`table_join_t2`.`a` AS `a`,`test`.`table_join_t3`.`a` AS `a`,`test`.`table_join_t4`.`a` AS `a`,`test`.`table_join_t5`.`a` AS `a`,`test`.`table_join_t6`.`a` AS `a` from `test`.`table_join_t1` join `test`.`table_join_t2` left join (`test`.`table_join_t3` left join `test`.`table_join_t4` on((`test`.`table_join_t4`.`a` = `test`.`table_join_t1`.`a`)) left join (`test`.`table_join_t5` left join `test`.`table_join_t6` on((`test`.`table_join_t6`.`a` = `test`.`table_join_t4`.`a`))) on((`test`.`table_join_t5`.`a` = `test`.`table_join_t4`.`a`))) on(((`test`.`table_join_t2`.`a` = `test`.`table_join_t1`.`a`) and (`test`.`table_join_t3`.`a` = `test`.`table_join_t1`.`a`))) where (`test`.`table_join_t2`.`a` = `test`.`table_join_t1`.`a`)
+SELECT * 
+FROM 
+table_join_t1 JOIN table_join_t2 ON table_join_t1.a = table_join_t2.a 
+LEFT JOIN 
+(
+(
+table_join_t3 LEFT JOIN table_join_t4 ON table_join_t3.a = table_join_t4.a
+) 
+LEFT JOIN 
+(
+table_join_t5 LEFT JOIN table_join_t6 ON table_join_t5.a = table_join_t6.a
+) 
+ON table_join_t4.a = table_join_t5.a
+) 
+ON table_join_t1.a = table_join_t3.a;
+a	a	a	a	a	a
+DROP TABLE table_join_t1,table_join_t2,table_join_t3,table_join_t4,table_join_t5,table_join_t6;
+#
+# Bug#48483: crash in get_best_combination()
+#
+CREATE TABLE table_join_t1(f1 INT);
+INSERT INTO table_join_t1 VALUES (1),(2);
+CREATE VIEW v1 AS SELECT 1 FROM table_join_t1 LEFT JOIN table_join_t1 AS table_join_t2 on 1=1;
+EXPLAIN EXTENDED
+SELECT 1 FROM v1 right join v1 AS v2 ON RAND();
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
+1	SIMPLE	table_join_t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Using join buffer (Block Nested Loop)
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using join buffer (Block Nested Loop)
+1	SIMPLE	table_join_t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Using join buffer (Block Nested Loop)
+Warnings:
+Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
+Note	1003	/* select#1 */ select 1 AS `1` from `test`.`table_join_t1` left join `test`.`table_join_t1` `table_join_t2` on((1 = 1)) left join (`test`.`table_join_t1` left join `test`.`table_join_t1` `table_join_t2` on((1 = 1))) on(rand()) where 1
+DROP VIEW v1;
+DROP TABLE table_join_t1;
+#
+# Bug#52177 crash with explain, row comparison, join, text field
+#
+CREATE TABLE table_join_t1 (a TINYINT, b TEXT, KEY (a));
+INSERT INTO table_join_t1 VALUES (0,''),(0,'');
+FLUSH TABLES;
+EXPLAIN SELECT 1 FROM table_join_t1 LEFT JOIN table_join_t1 a ON 1
+WHERE ROW(table_join_t1.a, 1111.11) = ROW(1111.11, 1111.11) AND
+ROW(table_join_t1.b, 1111.11) <=> ROW('','');
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
+Warnings:
+Note	1003	/* select#1 */ select 1 AS `1` from `test`.`table_join_t1` left join `test`.`table_join_t1` `a` on(1) where 0
+DROP TABLE table_join_t1;
+#
+# Bug #50335: Assertion `!(order->used & map)' in eq_ref_table
+# 
+CREATE TABLE table_join_t1 (a INT NOT NULL, b INT NOT NULL, PRIMARY KEY (a,b));
+INSERT INTO table_join_t1 VALUES (0,0), (1,1);
+SELECT * FROM table_join_t1 STRAIGHT_JOIN table_join_t1 table_join_t2 ON table_join_t1.a=table_join_t2.a AND table_join_t1.a=table_join_t2.b ORDER BY table_join_t2.a, table_join_t1.a;
+a	b	a	b
+0	0	0	0
+1	1	1	1
+DROP TABLE table_join_t1;
+End of 5.0 tests.
+CREATE TABLE table_join_t1 (f1 int);
+CREATE TABLE table_join_t2 (f1 int);
+INSERT INTO table_join_t2  VALUES (1);
+CREATE VIEW v1 AS SELECT * FROM table_join_t2;
+PREPARE stmt FROM 'UPDATE table_join_t2 AS A NATURAL JOIN v1 B SET B.f1 = 1';
+EXECUTE stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+DROP VIEW v1;
+DROP TABLE table_join_t1, table_join_t2;
+CREATE TABLE table_join_t1(a CHAR(9),b INT,KEY(b),KEY(a)) ENGINE=SequoiaDB;
+CREATE TABLE table_join_t2(a CHAR(9),b INT,KEY(b),KEY(a)) ENGINE=SequoiaDB;
+INSERT INTO table_join_t1 VALUES ('1',null),(null,null);
+INSERT INTO table_join_t2 VALUES ('1',null),(null,null);
+CREATE TABLE mm1(a CHAR(9),b INT,KEY(b),KEY(a))
+ENGINE=SequoiaDB  UNION=(table_join_t1,table_join_t2);
+SELECT table_join_t1.a FROM mm1,table_join_t1;
+a
+DROP TABLE table_join_t1, table_join_t2, mm1;
+#
+# Bug #54468: crash after item's print() function when ordering/grouping 
+#             by subquery
+#
+CREATE TABLE table_join_t1(a INT, b INT);
+INSERT INTO table_join_t1 VALUES (), ();
+SELECT 1 FROM table_join_t1
+GROUP BY
+GREATEST(table_join_t1.a,
+(SELECT 1 FROM
+(SELECT table_join_t1.b FROM table_join_t1,table_join_t1 table_join_t2
+ORDER BY table_join_t1.a, table_join_t1.a LIMIT 1) AS d)
+);
+1
+1
+DROP TABLE table_join_t1;
+#
+# Bug #53544: Server hangs during JOIN query in stored procedure called
+#             twice in a row
+#
+CREATE TABLE table_join_t1(c INT);
+INSERT INTO table_join_t1 VALUES (1), (2);
+PREPARE stmt FROM "SELECT table_join_t2.c AS f1 FROM table_join_t1 LEFT JOIN
+                                        table_join_t1 table_join_t2 ON table_join_t1.c=table_join_t2.c RIGHT JOIN
+                                        table_join_t1 table_join_t3 ON table_join_t1.c=table_join_t3.c 
+                   GROUP BY f1;";
+EXECUTE stmt;
+f1
+1
+2
+EXECUTE stmt;
+f1
+1
+2
+DEALLOCATE PREPARE stmt;
+DROP TABLE table_join_t1;
+End of 5.1 tests
+#
+# Bug #59696 Optimizer fails to move WHERE condition on JOIN column 
+#            when joining with a view
+#
+CREATE TABLE table_join_t1 (
+c1 INTEGER NOT NULL
+);
+INSERT INTO table_join_t1 VALUES (1),(2),(3);
+CREATE TABLE table_join_t2 (
+pk INTEGER NOT NULL,
+c1 INTEGER NOT NULL,
+PRIMARY KEY (pk)
+);
+INSERT INTO table_join_t2 VALUES (1,4),(3,5),(2,6);
+EXPLAIN SELECT table_join_t2.pk, table_join_t2.c1 FROM table_join_t2, table_join_t1 
+WHERE table_join_t2.pk = table_join_t1.c1 AND table_join_t2.pk >= 2;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t2	NULL	range	PRIMARY	PRIMARY	4	NULL	1	100.00	Using where with pushed condition (`test`.`table_join_t2`.`pk` >= 2)
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where; Using join buffer (Block Nested Loop)
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t2`.`pk` AS `pk`,`test`.`table_join_t2`.`c1` AS `c1` from `test`.`table_join_t2` join `test`.`table_join_t1` where ((`test`.`table_join_t1`.`c1` = `test`.`table_join_t2`.`pk`) and (`test`.`table_join_t2`.`pk` >= 2))
+SELECT table_join_t2.pk, table_join_t2.c1 FROM table_join_t2, table_join_t1 
+WHERE table_join_t2.pk = table_join_t1.c1 AND table_join_t2.pk >= 2;
+pk	c1
+2	6
+3	5
+CREATE VIEW v_table_join_t2 AS SELECT * FROM table_join_t2;
+EXPLAIN SELECT v_table_join_t2.pk, v_table_join_t2.c1 FROM v_table_join_t2, table_join_t1 
+WHERE v_table_join_t2.pk = table_join_t1.c1 AND v_table_join_t2.pk >= 2;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t2	NULL	range	PRIMARY	PRIMARY	4	NULL	1	100.00	Using where
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where; Using join buffer (Block Nested Loop)
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t2`.`pk` AS `pk`,`test`.`table_join_t2`.`c1` AS `c1` from `test`.`table_join_t2` join `test`.`table_join_t1` where ((`test`.`table_join_t1`.`c1` = `test`.`table_join_t2`.`pk`) and (`test`.`table_join_t2`.`pk` >= 2))
+SELECT v_table_join_t2.pk, v_table_join_t2.c1 FROM v_table_join_t2, table_join_t1 
+WHERE v_table_join_t2.pk = table_join_t1.c1 AND v_table_join_t2.pk >= 2;
+pk	c1
+2	6
+3	5
+DROP VIEW v_table_join_t2;
+DROP TABLE table_join_t1, table_join_t2;
+#
+# Bug 13102033 - CRASH IN COPY_FUNCS IN SQL_SELECT.CC ON JOIN + 
+#                GROUP BY + ORDER BY
+#
+CREATE TABLE table_join_t1 (  
+pk INTEGER NOT NULL,
+i1 INTEGER NOT NULL,
+i2 INTEGER NOT NULL,
+PRIMARY KEY (pk)
+);
+INSERT INTO table_join_t1 VALUES (7,8,1), (8,2,2);
+CREATE VIEW v1 AS SELECT * FROM table_join_t1;
+EXPLAIN SELECT table_join_t1.pk
+FROM v1, table_join_t1
+WHERE v1.i2 = 211
+AND v1.i2 > 7
+OR table_join_t1.i1 < 3
+GROUP BY table_join_t1.pk
+ORDER BY v1.i2;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary; Using filesort
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Using join buffer (Block Nested Loop)
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`pk` AS `pk` from `test`.`table_join_t1` join `test`.`table_join_t1` where (((`test`.`table_join_t1`.`i2` = 211) and (`test`.`table_join_t1`.`i2` > 7)) or (`test`.`table_join_t1`.`i1` < 3)) group by `test`.`table_join_t1`.`pk` order by `test`.`table_join_t1`.`i2`
+SELECT table_join_t1.pk
+FROM v1, table_join_t1
+WHERE v1.i2 = 211
+AND v1.i2 > 7
+OR table_join_t1.i1 < 3
+GROUP BY table_join_t1.pk
+ORDER BY v1.i2;
+pk
+8
+EXPLAIN SELECT table_join_t1.pk
+FROM v1, table_join_t1
+WHERE (v1.i2 = 211 AND v1.i2 > 7)
+OR (table_join_t1.i1 < 3 AND v1.i2 < 10);
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	2	62.50	Using where
+1	SIMPLE	table_join_t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Using join buffer (Block Nested Loop)
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t1`.`pk` AS `pk` from `test`.`table_join_t1` join `test`.`table_join_t1` where (((`test`.`table_join_t1`.`i2` = 211) and (`test`.`table_join_t1`.`i2` > 7)) or ((`test`.`table_join_t1`.`i1` < 3) and (`test`.`table_join_t1`.`i2` < 10)))
+SELECT table_join_t1.pk
+FROM v1, table_join_t1
+WHERE (v1.i2 = 211 AND v1.i2 > 7)
+OR (table_join_t1.i1 < 3 AND v1.i2 < 10);
+pk
+8
+8
+DROP VIEW v1;
+DROP TABLE table_join_t1;
+#
+# BUG#11752239 - 43368: STRAIGHT_JOIN DOESN'T WORK FOR NESTED JOINS 
+#
+create table table_join_t1(c1 int primary key, c2 char(10)) engine=sequoiadb;
+create table table_join_t2(c1 int primary key, c2 char(10), ref_table_join_t1 int) engine=sequoiadb;
+create table table_join_t3(c1 int primary key, c2 char(10), ref_table_join_t1 int) engine=sequoiadb;
+create table table_join_t4(c1 int primary key, c2 char(10), ref_table_join_t1 int) engine=sequoiadb;
+insert into table_join_t1 values(1,'a');
+insert into table_join_t2 values(1,'a', 1);
+insert into table_join_t3 values(1,'a', 1);
+insert into table_join_t3 values(2,'b',2);
+insert into table_join_t4 values(1,'a', 1);
+insert into table_join_t4 values(2,'a', 2);
+insert into table_join_t4 values(3,'a', 3);
+insert into table_join_t4 values(4,'a', 4);
+insert into table_join_t1 values(2,'b');
+insert into table_join_t1 values(3,'c');
+EXPLAIN SELECT * FROM table_join_t4 JOIN (table_join_t1 join table_join_t3 on table_join_t3.ref_table_join_t1 =
+table_join_t1.c1 join table_join_t2 on table_join_t2.ref_table_join_t1 = table_join_t1.c1) on table_join_t4.ref_table_join_t1 = table_join_t1.c1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t2	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where with pushed condition (`test`.`table_join_t2`.`ref_table_join_t1` is not null)
+1	SIMPLE	table_join_t3	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
+1	SIMPLE	table_join_t4	NULL	ALL	NULL	NULL	NULL	NULL	4	25.00	Using where; Using join buffer (Block Nested Loop)
+1	SIMPLE	table_join_t1	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t2.ref_table_join_t1	1	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t4`.`c1` AS `c1`,`test`.`table_join_t4`.`c2` AS `c2`,`test`.`table_join_t4`.`ref_table_join_t1` AS `ref_table_join_t1`,`test`.`table_join_t1`.`c1` AS `c1`,`test`.`table_join_t1`.`c2` AS `c2`,`test`.`table_join_t3`.`c1` AS `c1`,`test`.`table_join_t3`.`c2` AS `c2`,`test`.`table_join_t3`.`ref_table_join_t1` AS `ref_table_join_t1`,`test`.`table_join_t2`.`c1` AS `c1`,`test`.`table_join_t2`.`c2` AS `c2`,`test`.`table_join_t2`.`ref_table_join_t1` AS `ref_table_join_t1` from `test`.`table_join_t4` join `test`.`table_join_t1` join `test`.`table_join_t3` join `test`.`table_join_t2` where ((`test`.`table_join_t3`.`ref_table_join_t1` = `test`.`table_join_t2`.`ref_table_join_t1`) and (`test`.`table_join_t4`.`ref_table_join_t1` = `test`.`table_join_t2`.`ref_table_join_t1`) and (`test`.`table_join_t1`.`c1` = `test`.`table_join_t2`.`ref_table_join_t1`))
+EXPLAIN SELECT STRAIGHT_JOIN * FROM table_join_t4 JOIN (table_join_t1 join table_join_t3 on table_join_t3.ref_table_join_t1 =
+table_join_t1.c1 join table_join_t2 on table_join_t2.ref_table_join_t1 = table_join_t1.c1) on table_join_t4.ref_table_join_t1 = table_join_t1.c1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t4	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using where with pushed condition (`test`.`table_join_t4`.`ref_table_join_t1` is not null)
+1	SIMPLE	table_join_t1	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t4.ref_table_join_t1	1	100.00	NULL
+1	SIMPLE	table_join_t3	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
+1	SIMPLE	table_join_t2	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where; Using join buffer (Block Nested Loop)
+Warnings:
+Note	1003	/* select#1 */ select straight_join `test`.`table_join_t4`.`c1` AS `c1`,`test`.`table_join_t4`.`c2` AS `c2`,`test`.`table_join_t4`.`ref_table_join_t1` AS `ref_table_join_t1`,`test`.`table_join_t1`.`c1` AS `c1`,`test`.`table_join_t1`.`c2` AS `c2`,`test`.`table_join_t3`.`c1` AS `c1`,`test`.`table_join_t3`.`c2` AS `c2`,`test`.`table_join_t3`.`ref_table_join_t1` AS `ref_table_join_t1`,`test`.`table_join_t2`.`c1` AS `c1`,`test`.`table_join_t2`.`c2` AS `c2`,`test`.`table_join_t2`.`ref_table_join_t1` AS `ref_table_join_t1` from `test`.`table_join_t4` join `test`.`table_join_t1` join `test`.`table_join_t3` join `test`.`table_join_t2` where ((`test`.`table_join_t1`.`c1` = `test`.`table_join_t4`.`ref_table_join_t1`) and (`test`.`table_join_t3`.`ref_table_join_t1` = `test`.`table_join_t4`.`ref_table_join_t1`) and (`test`.`table_join_t2`.`ref_table_join_t1` = `test`.`table_join_t4`.`ref_table_join_t1`))
+EXPLAIN SELECT * FROM table_join_t4 STRAIGHT_JOIN (table_join_t1 join table_join_t3 on table_join_t3.ref_table_join_t1 =
+table_join_t1.c1 join table_join_t2 on table_join_t2.ref_table_join_t1 = table_join_t1.c1) on table_join_t4.ref_table_join_t1 = table_join_t1.c1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_join_t4	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using where with pushed condition (`test`.`table_join_t4`.`ref_table_join_t1` is not null)
+1	SIMPLE	table_join_t2	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where; Using join buffer (Block Nested Loop)
+1	SIMPLE	table_join_t3	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
+1	SIMPLE	table_join_t1	NULL	eq_ref	PRIMARY	PRIMARY	4	test.table_join_t4.ref_table_join_t1	1	100.00	NULL
+Warnings:
+Note	1003	/* select#1 */ select `test`.`table_join_t4`.`c1` AS `c1`,`test`.`table_join_t4`.`c2` AS `c2`,`test`.`table_join_t4`.`ref_table_join_t1` AS `ref_table_join_t1`,`test`.`table_join_t1`.`c1` AS `c1`,`test`.`table_join_t1`.`c2` AS `c2`,`test`.`table_join_t3`.`c1` AS `c1`,`test`.`table_join_t3`.`c2` AS `c2`,`test`.`table_join_t3`.`ref_table_join_t1` AS `ref_table_join_t1`,`test`.`table_join_t2`.`c1` AS `c1`,`test`.`table_join_t2`.`c2` AS `c2`,`test`.`table_join_t2`.`ref_table_join_t1` AS `ref_table_join_t1` from `test`.`table_join_t4` join `test`.`table_join_t1` join `test`.`table_join_t3` join `test`.`table_join_t2` where ((`test`.`table_join_t2`.`ref_table_join_t1` = `test`.`table_join_t4`.`ref_table_join_t1`) and (`test`.`table_join_t3`.`ref_table_join_t1` = `test`.`table_join_t4`.`ref_table_join_t1`) and (`test`.`table_join_t1`.`c1` = `test`.`table_join_t4`.`ref_table_join_t1`))
+drop table table_join_t1,table_join_t2,table_join_t3,table_join_t4;
+# Bug#20455184: Assertion failed: join_cond in optimizer.cc
+CREATE TABLE table_join_t1(a INTEGER) engine=sequoiadb;
+DROP TABLE table_join_t1;
+# Bug#21045724: Assertion '!table || !table->read_set ...
+CREATE TABLE table_join_t1
+(pk INTEGER,
+dummy VARCHAR(64),
+col_check TINYINT,
+PRIMARY KEY(pk)
+) engine=sequoiadb;
+INSERT INTO table_join_t1 VALUES (13, '13', 13);
+CREATE VIEW v1 AS
+SELECT *
+FROM table_join_t1
+WHERE pk BETWEEN 13 AND 14;
+PREPARE stable_join_t1 FROM "
+UPDATE v1 AS a NATURAL JOIN v1 AS b
+SET a.dummy = '', b.col_check = NULL ";
+EXECUTE stable_join_t1;
+EXECUTE stable_join_t1;
+DEALLOCATE PREPARE stable_join_t1;
+DROP VIEW v1;
+DROP TABLE table_join_t1;

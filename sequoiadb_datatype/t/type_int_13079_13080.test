@@ -1,0 +1,36 @@
+
+#
+# test of int and unsigned int
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_int_t1;
+--enable_warnings
+SET SQL_WARNINGS=1;
+
+# create table and insert
+create table table_int_t1 (a int, b int unsigned);
+insert into table_int_t1 values (-2147483648,0);
+insert into table_int_t1 values (0,0);
+insert into table_int_t1 values (2147483647,4294967295);
+--error 1366
+insert into table_int_t1 values ('abcd','abcd');
+--error 1264
+insert into table_int_t1 values (2147483649,0);
+--error 1264
+insert into table_int_t1 values (0,4294967296);
+select * from table_int_t1 order by a;
+
+# update
+update table_int_t1 set a = -100000000 where a <= 0 and b >= 0;
+# select 
+select * from table_int_t1 order by a;
+# delete
+delete from table_int_t1 where b >= 0;
+# select
+select * from table_int_t1 order by a;
+drop table table_int_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc
+# End of 4.1 tests

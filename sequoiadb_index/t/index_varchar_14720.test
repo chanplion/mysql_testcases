@@ -1,0 +1,40 @@
+
+#
+# test of index of varchar
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_idx_varc_t1;
+--enable_warnings
+SET SQL_WARNINGS=1;
+
+# create table and insert
+create table table_idx_varc_t1 (a varchar(127));
+# create index
+create index a on table_idx_varc_t1 (a(16));
+# insert
+insert into table_idx_varc_t1 values('a');
+insert into table_idx_varc_t1 values ('a ');
+insert into table_idx_varc_t1 values ('a  ');
+insert into table_idx_varc_t1 values ('aa');
+insert into table_idx_varc_t1 values ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+insert into table_idx_varc_t1 values ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+insert into table_idx_varc_t1 values ();
+--error 1406
+insert into table_idx_varc_t1 values ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+# select
+select * from table_idx_varc_t1 order by a;
+select a from table_idx_varc_t1 where a = 0;
+select a from table_idx_varc_t1 where a >= 0 order by a;
+select a from table_idx_varc_t1 where a <= 0 order by a;
+select * from table_idx_varc_t1 where a between 'a' and 'b' order by a;
+select * from table_idx_varc_t1 where a is null;
+select * from table_idx_varc_t1 where a != 'a'  order by a;
+select * from table_idx_varc_t1 where a <> 'a' order by a;
+select * from table_idx_varc_t1 where a > 'aa' order by a limit 2;
+select * from table_idx_varc_t1 where a < 'aa' order by a limit 3 offset 1;
+drop table table_idx_varc_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc
+# End of 4.1 tests

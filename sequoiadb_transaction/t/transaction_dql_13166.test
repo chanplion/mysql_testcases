@@ -1,0 +1,31 @@
+#
+# test transaction dql
+#
+
+--source suite/sequoiadb_query/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_transdql_t1;
+--enable_warnings
+
+# create table
+CREATE TABLE table_transdql_t1 (a INT NOT NULL, b text);
+# insert
+INSERT INTO table_transdql_t1 VALUES (0, 'a'),(1, 'b'),(2, 'c'),(3, 'd'),(4, 'e'),(5, 'f'),(6, 'g'),(7, 'h'),(8, 'i'),(9, 'j'),(10, 'k');
+
+# begin transaction
+START TRANSACTION;
+# dql
+SELECT * FROM table_transdql_t1 WHERE a > 5 ORDER BY a;
+# rollback
+ROLLBACK;
+
+# begin transaction
+START TRANSACTION;
+# dql
+SELECT * FROM table_transdql_t1 WHERE b <> 'b' ORDER BY b;
+# commit
+COMMIT;
+DROP TABLE table_transdql_t1;
+
+--source suite/sequoiadb_query/include/uninstall_sequoiadb.inc

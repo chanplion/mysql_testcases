@@ -1,0 +1,64 @@
+drop table if exists table_idx_double_t1;
+SET SQL_WARNINGS=1;
+create table table_idx_double_t1 (a double);
+create index a on table_idx_double_t1 (a);
+insert into table_idx_double_t1 values (-1.7976931348623157E+308);
+insert into table_idx_double_t1 values (1.7976931348623157E+308);
+insert into table_idx_double_t1 values (0.0);
+insert into table_idx_double_t1 values (1.789e+300);
+insert into table_idx_double_t1 values (1.807e+307);
+insert into table_idx_double_t1 values (9.22337203685479e18);
+insert into table_idx_double_t1 values ();
+select * from table_idx_double_t1 order by a;
+a
+NULL
+-1.7976931348623157e308
+0
+9.22337203685479e18
+1.789e300
+1.807e307
+1.7976931348623157e308
+select a from table_idx_double_t1 where a = 0;
+a
+0
+select a from table_idx_double_t1 where a >= 0 order by a;
+a
+0
+9.22337203685479e18
+1.789e300
+1.807e307
+1.7976931348623157e308
+select a from table_idx_double_t1 where a <= 0 order by a;
+a
+-1.7976931348623157e308
+0
+select * from table_idx_double_t1 where a between 0 and 1.7907e+307 order by a;
+a
+0
+9.22337203685479e18
+1.789e300
+select * from table_idx_double_t1 where a is null;
+a
+NULL
+select * from table_idx_double_t1 where a != 0  order by a;
+a
+-1.7976931348623157e308
+9.22337203685479e18
+1.789e300
+1.807e307
+1.7976931348623157e308
+select * from table_idx_double_t1 where a <> 0 order by a;
+a
+-1.7976931348623157e308
+9.22337203685479e18
+1.789e300
+1.807e307
+1.7976931348623157e308
+select * from table_idx_double_t1 where a > -1.179769313486232e+307 order by a limit 2;
+a
+0
+9.22337203685479e18
+select * from table_idx_double_t1 where a < 1.179769313486232e+307 order by a limit 3 offset 3;
+a
+1.789e300
+drop table table_idx_double_t1;

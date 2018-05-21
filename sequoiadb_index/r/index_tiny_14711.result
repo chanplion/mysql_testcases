@@ -1,0 +1,56 @@
+drop table if exists table_idx_tint_t1;
+SET SQL_WARNINGS=1;
+create table table_idx_tint_t1 (a tinyint);
+insert into table_idx_tint_t1 values (-128);
+insert into table_idx_tint_t1 values (0);
+insert into table_idx_tint_t1 values (2);
+insert into table_idx_tint_t1 values (126);
+insert into table_idx_tint_t1 values (127);
+insert into table_idx_tint_t1 values ();
+create index a on table_idx_tint_t1 (a);
+insert into table_idx_tint_t1 values (-9223372036854775809);
+ERROR 22003: Out of range value for column 'a' at row 1
+insert into table_idx_tint_t1 values (9223372036854775808);
+ERROR 22003: Out of range value for column 'a' at row 1
+select a from table_idx_tint_t1 where a = 0;
+a
+0
+select a from table_idx_tint_t1 where a >= 0 order by a;
+a
+0
+2
+126
+127
+select a from table_idx_tint_t1 where a <= 0 order by a;
+a
+-128
+0
+select * from table_idx_tint_t1 where a between 1 and 256 order by a;
+a
+2
+126
+127
+select * from table_idx_tint_t1 where a is null;
+a
+NULL
+select * from table_idx_tint_t1 where a != 0  order by a;
+a
+-128
+2
+126
+127
+select * from table_idx_tint_t1 where a <> 0 order by a;
+a
+-128
+2
+126
+127
+select * from table_idx_tint_t1 where a > -9223372036854775809 order by a limit 2;
+a
+-128
+0
+select * from table_idx_tint_t1 where a < 9223372036854775808 order by a limit 3 offset 3;
+a
+126
+127
+drop table table_idx_tint_t1;

@@ -1,0 +1,124 @@
+
+#
+# Test of like
+#
+--source suite/sequoiadb_query/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_like_t1;
+--enable_warnings
+
+create table table_like_t1 (a varchar(10), key(a));
+insert into table_like_t1 values ("a"),("abc"),("abcd"),("hello"),("test");
+select * from table_like_t1 where a like "abc%";
+select * from table_like_t1 where a like concat("abc","%") order by a;
+select * from table_like_t1 where a like "ABC%" order by a;
+select * from table_like_t1 where a like "test%" order by a;
+select * from table_like_t1 where a like "te_t" order by a;
+drop table table_like_t1;
+
+#
+# Bug #2231
+#
+create table table_like_t1 (a varchar(10), key(a));
+insert into table_like_t1 values ('a'), ('a\\b');
+select * from table_like_t1 where a like 'a\\%' escape '#';
+select * from table_like_t1 where a like 'a\\%' escape '#' and a like 'a\\\\b';
+drop table table_like_t1;
+
+#
+# Bug #2885: like and datetime
+#
+
+create table table_like_t1 (a datetime);
+insert into table_like_t1 values ('2004-03-11 12:00:21');
+select * from table_like_t1 where a like '2004-03-11 12:00:21';
+drop table table_like_t1;
+
+# Bug #2547 Strange "like" behaviour in tables with default charset=cp1250
+# Test like with non-default character set using TurboBM
+#
+SET NAMES cp1250;
+CREATE TABLE table_like_t1 (a varchar(250) NOT NULL) DEFAULT CHARACTER SET=cp1250;
+INSERT INTO table_like_t1 VALUES
+('Techni Tapes Sp. z o.o.'),
+('Pojazdy Szynowe PESA Bydgoszcz SA Holding'),
+('AKAPESTER 1 P.P.H.U.'),
+('Pojazdy Szynowe PESA Bydgoszcz S A Holding'),
+('PPUH PESKA-I Maria Struniarska');
+
+select * from table_like_t1 where a like '%PESA%' order by a;
+select * from table_like_t1 where a like '%PESA %' order by a;
+select * from table_like_t1 where a like '%PES%' order by a;
+select * from table_like_t1 where a like '%PESKA%' order by a;
+select * from table_like_t1 where a like '%ESKA%' order by a;
+DROP TABLE table_like_t1;
+
+--echo #
+--echo # Bug #54575: crash when joining tables with unique set column
+--echo #
+CREATE TABLE table_like_t1(a SET('a') NOT NULL, UNIQUE KEY(a));
+CREATE TABLE table_like_t2(b INT PRIMARY KEY);
+INSERT IGNORE INTO table_like_t1 VALUES ();
+INSERT INTO table_like_t2 VALUES (1), (2), (3);
+SELECT 1 FROM table_like_t2 JOIN table_like_t1 ON 1 LIKE a GROUP BY a order by a;
+DROP TABLE table_like_t1, table_like_t2;
+
+--echo #
+--echo # Bug#19931126 VALGRIND REPORTS USE OF UNINITIALIZED VALUE IN
+--echo #              MY_WILDCMP_BIN_IMPL
+--echo #
+
+CREATE TABLE table_like_t1(x CHAR(1));
+
+# The escape string is null and defaults to '\'.
+SELECT ('a%b' LIKE 'a\%b' ESCAPE (SELECT x FROM table_like_t1));
+SELECT ('a%b' LIKE 'ax%b' ESCAPE (SELECT x FROM table_like_t1));
+
+# The escape string is 'x'.
+INSERT INTO table_like_t1 VALUES ('x');
+SELECT ('a%b' LIKE 'a\%b' ESCAPE (SELECT x FROM table_like_t1));
+SELECT ('a%b' LIKE 'ax%b' ESCAPE (SELECT x FROM table_like_t1));
+
+# The escape string cannot have more than one character.
+--error ER_WRONG_ARGUMENTS
+SELECT ('a%b' LIKE 'ax%b' ESCAPE (SELECT 'xy' FROM table_like_t1));
+
+# The subquery cannot return more than one row.
+INSERT INTO table_like_t1 VALUES ('y');
+--error ER_SUBQUERY_NO_1_ROW
+SELECT ('a%b' LIKE 'ax%b' ESCAPE (SELECT x FROM table_like_t1));
+DELETE FROM table_like_t1 WHERE x = 'y';
+
+# The escape clause must have exactly one column.
+--error ER_OPERAND_COLUMNS
+SELECT ('a%b' LIKE 'ax%b' ESCAPE (SELECT x, x FROM table_like_t1));
+--error ER_OPERAND_COLUMNS
+SELECT ('a%b' LIKE 'ax%b' ESCAPE ('x', 'y'));
+
+# The escape clause needs to be constant during execution.
+--error ER_WRONG_ARGUMENTS
+SELECT ('a%b' LIKE 'ax%b' ESCAPE x) FROM table_like_t1;
+
+# Also test on an indexed column to exercise the range optimizer.
+# (The range optimizer will give up because it doesn't know the
+# value of the escape character, so the query execution plan will
+# not actually use range optimization.)
+CREATE TABLE table_like_t2(x int, y varchar(100));
+CREATE INDEX idx ON table_like_t2(y);
+INSERT INTO table_like_t2 VALUES (1, 'abcd'), (2, 'ab%cde');
+ANALYZE TABLE table_like_t2;
+let $query=
+SELECT * FROM table_like_t2 WHERE y LIKE 'abc%%' ESCAPE (SELECT 'c' FROM table_like_t1) ORDER BY y;
+eval EXPLAIN $query;
+eval $query;
+DROP TABLE table_like_t1, table_like_t2;
+
+--echo # Bug#20035071: Out of range error in subselect lead to assertion failed
+
+CREATE TABLE table_like_t1(a INTEGER);
+--error ER_DATA_OUT_OF_RANGE
+SELECT 1 FROM table_like_t1 HAVING (SELECT 1 FROM table_like_t1) LIKE EXP(NOW());
+DROP TABLE table_like_t1;
+
+--source suite/sequoiadb_query/include/uninstall_sequoiadb.inc

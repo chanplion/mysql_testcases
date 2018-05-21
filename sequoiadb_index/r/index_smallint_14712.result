@@ -1,0 +1,76 @@
+drop table if exists table_idx_sint_t1;
+SET SQL_WARNINGS=1;
+create table table_idx_sint_t1 (a smallint);
+insert into table_idx_sint_t1 values (-32768);
+insert into table_idx_sint_t1 values (0);
+insert into table_idx_sint_t1 values (1);
+insert into table_idx_sint_t1 values (1001);
+insert into table_idx_sint_t1 values (32000);
+insert into table_idx_sint_t1 values (32766);
+insert into table_idx_sint_t1 values (32767);
+insert into table_idx_sint_t1 values ();
+create index a on table_idx_sint_t1 (a);
+insert into table_idx_sint_t1 values (-9223372036854775809);
+ERROR 22003: Out of range value for column 'a' at row 1
+insert into table_idx_sint_t1 values (9223372036854775808);
+ERROR 22003: Out of range value for column 'a' at row 1
+select * from table_idx_sint_t1 order by a;
+a
+NULL
+-32768
+0
+1
+1001
+32000
+32766
+32767
+select a from table_idx_sint_t1 where a = 0;
+a
+0
+select a from table_idx_sint_t1 where a >= 0 order by a;
+a
+0
+1
+1001
+32000
+32766
+32767
+select a from table_idx_sint_t1 where a <= 0 order by a;
+a
+-32768
+0
+select * from table_idx_sint_t1 where a between 1 and 32766 order by a;
+a
+1
+1001
+32000
+32766
+select * from table_idx_sint_t1 where a is null;
+a
+NULL
+select * from table_idx_sint_t1 where a != 0  order by a;
+a
+-32768
+1
+1001
+32000
+32766
+32767
+select * from table_idx_sint_t1 where a <> 0 order by a;
+a
+-32768
+1
+1001
+32000
+32766
+32767
+select * from table_idx_sint_t1 where a > -9223372036854775809 order by a limit 2;
+a
+-32768
+0
+select * from table_idx_sint_t1 where a < 9223372036854775808 order by a limit 3 offset 3;
+a
+1001
+32000
+32766
+drop table table_idx_sint_t1;

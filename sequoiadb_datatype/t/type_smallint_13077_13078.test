@@ -1,0 +1,36 @@
+
+#
+# test of smallint and unsigned smallint
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_sint_t1;
+--enable_warnings
+SET SQL_WARNINGS=1;
+
+# create table and insert
+create table table_sint_t1 (a smallint, b smallint unsigned);
+insert into table_sint_t1 values (-32768,0);
+insert into table_sint_t1 values (0,0);
+insert into table_sint_t1 values (32767,65535);
+--error 1366
+insert into table_sint_t1 values ('abcd','abcd');
+--error 1264
+insert into table_sint_t1 values (-32769,0);
+--error 1264
+insert into table_sint_t1 values (0,65536);
+select * from table_sint_t1 order by a;
+
+# update
+update table_sint_t1 set a = -999 where a >= 0 and b > 0;
+# select 
+select * from table_sint_t1 order by a;
+# delete
+delete from table_sint_t1 where b >= 0;
+# select
+select * from table_sint_t1 order by b;
+drop table table_sint_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc
+# End of 4.1 tests

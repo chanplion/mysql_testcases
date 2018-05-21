@@ -1,0 +1,63 @@
+#
+# test where =, <>, !=, <, <=, >, >=, is null, field1=field2, between and
+#
+
+--source suite/sequoiadb_query/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_where_t1;
+--enable_warnings
+
+#
+# Create test table
+#
+
+CREATE TABLE table_where_t1 (
+  id int not null,
+  fld1 int(6) unsigned DEFAULT 0 NOT NULL,
+  companynr tinyint(2) unsigned DEFAULT 0 NOT NULL,
+  fld3 char(30) DEFAULT '' NOT NULL,
+  fld4 char(35) DEFAULT '' NOT NULL,
+  fld5 char(35) DEFAULT '' NOT NULL,
+  fld6 char(4) DEFAULT '' NOT NULL,
+  KEY fld3 (fld3),
+  PRIMARY KEY (id)
+);
+
+--disable_query_log
+INSERT INTO table_where_t1 VALUES (1,000001,00,'Omaha','teethe','neat','');
+INSERT INTO table_where_t1 VALUES (2,011401,37,'breaking','dreaded','Steinberg','W');
+INSERT INTO table_where_t1 VALUES (3,011402,37,'Romans','scholastics','jarring','');
+INSERT INTO table_where_t1 VALUES (4,011403,37,'intercepted','audiology','tinily','');
+INSERT INTO table_where_t1 VALUES (5,011501,37,'bewilderingly','wallet','balled','');
+INSERT INTO table_where_t1 VALUES (6,011701,37,'astound','parters','persist','W');
+INSERT INTO table_where_t1 VALUES (7,011702,37,'admonishing','eschew','attainments','');
+INSERT INTO table_where_t1 VALUES (8,011703,37,'sumac','quitter','fanatic','');
+INSERT INTO table_where_t1 VALUES (9,012001,37,'flanking','neat','measures','FAS');
+INSERT INTO table_where_t1 VALUES (10,012003,37,'combed','Steinberg','rightfulness','');
+INSERT INTO table_where_t1 VALUES (11,012004,37,'subjective','jarring','capably','');
+INSERT INTO table_where_t1 VALUES (12,012005,37,'scatterbrain','tinily','impulsive','');
+INSERT INTO table_where_t1 VALUES (13,012301,37,'Eulerian','balled','starlet','');
+INSERT INTO table_where_t1 VALUES (14,012302,36,'dubbed','persist','terminators','');
+INSERT INTO table_where_t1 VALUES (15,012303,37,'Kane','attainments','untying','');
+INSERT INTO table_where_t1 VALUES (16,012304,37,'overlay','overlay','announces','FAS');
+INSERT INTO table_where_t1 VALUES (17,012305,37,'perturb','measures','featherweight','FAS');
+INSERT INTO table_where_t1 VALUES (18,012306,37,'goblins','rightfulness','pessimist','FAS');
+INSERT INTO table_where_t1 VALUES (19,012501,37,'annihilates','capably','daughter','');
+INSERT INTO table_where_t1 VALUES (20,012602,37,'Wotan','impulsive','decliner','FAS');
+--enable_query_log
+
+# select
+select fld3 from table_where_t1 where fld3 = 'bewilderingly';
+select fld3 from table_where_t1 where fld3 >= 'breaking' order by id;
+select fld3 from table_where_t1 where fld3 <= 'Kane' order by fld3;
+select * from table_where_t1 where id between 1 and 10;
+select * from table_where_t1 where fld3 is null;
+select * from table_where_t1 where fld3 != 'a' order by id;
+select * from table_where_t1 where fld3 <> 'Wotan' order by fld3;
+select * from table_where_t1 where id > 11 order by id;
+select * from table_where_t1 where fld4 < 'teethe' order by fld3;
+select * from table_where_t1 where fld4 = fld3;
+drop table table_where_t1;
+
+--source suite/sequoiadb_query/include/uninstall_sequoiadb.inc

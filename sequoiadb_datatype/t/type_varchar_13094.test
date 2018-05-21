@@ -1,0 +1,125 @@
+
+#
+# test varchar
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_varchar_t1, table_varchar_t2;
+--enable_warnings
+
+create table table_varchar_t1 (v varchar(30));
+show create table table_varchar_t1;
+insert into table_varchar_t1 values ('abc');
+insert into table_varchar_t1 values ('abc ');
+insert into table_varchar_t1 values ('abc    ');
+select length(v) from table_varchar_t1;
+drop table table_varchar_t1;
+create table table_varchar_t1 (v varchar(20));
+insert into table_varchar_t1 values('a ');
+select v='a' from table_varchar_t1;
+select binary v='a' from table_varchar_t1;
+select binary v='a ' from table_varchar_t1;
+insert into table_varchar_t1 values('a');
+alter table table_varchar_t1 add primary key (v);
+drop table table_varchar_t1;
+create table table_varchar_t1 (v varbinary(20));
+insert into table_varchar_t1 values('a');
+insert into table_varchar_t1 values('a ');
+alter table table_varchar_t1 add primary key (v);
+drop table table_varchar_t1;
+
+#
+# select
+#
+create table table_varchar_t1 (v varchar(254), index (v));
+insert into table_varchar_t1 values ("This is a test ");
+insert into table_varchar_t1 values ("Some sample data");
+insert into table_varchar_t1 values (" garbage ");
+insert into table_varchar_t1 values (" This is a test ");
+insert into table_varchar_t1 values ("This is a test");
+insert into table_varchar_t1 values ("Hello world");
+insert into table_varchar_t1 values ("Foo bar");
+insert into table_varchar_t1 values ("This is a test");
+insert into table_varchar_t1 values ("MySQL varchar test");
+insert into table_varchar_t1 values ("test MySQL varchar");
+insert into table_varchar_t1 values ("This is a long string to have some random length data included");
+insert into table_varchar_t1 values ("Short string");
+insert into table_varchar_t1 values ("VSS");
+insert into table_varchar_t1 values ("Some samples");
+insert into table_varchar_t1 values ("Bar foo");
+insert into table_varchar_t1 values ("Bye");
+insert into table_varchar_t1 values ("中文");
+--error 1406
+insert into table_varchar_t1 values ("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+select * from table_varchar_t1 where v like 'This is a test' order by v;
+select * from table_varchar_t1 where v='This is a test' order by v;
+select * from table_varchar_t1 where v like 'S%' order by v;
+drop table table_varchar_t1;
+
+#
+# check update and delete
+#
+create table table_varchar_t1 (pkcol varchar(16), othercol varchar(16), primary key (pkcol));
+insert into table_varchar_t1 values ('test', 'something'),('testing', 'otherthing');
+update table_varchar_t1 set othercol='somethingelse' where pkcol='test';
+select * from table_varchar_t1;
+delete from table_varchar_t1 where othercol = 'otherthing';
+drop table table_varchar_t1;
+
+#
+# Bug #9489: problems with key handling
+#
+
+create table table_varchar_t1 (a int, b varchar(12));
+insert into table_varchar_t1 values (1, 'A'), (22, NULL);
+create table table_varchar_t2 (a int);
+insert into table_varchar_t2 values (22), (22);
+select table_varchar_t1.a, table_varchar_t1.b, min(table_varchar_t1.b) from table_varchar_t1 inner join table_varchar_t2 ON table_varchar_t2.a = table_varchar_t1.a group by table_varchar_t1.b, table_varchar_t1.a;
+drop table table_varchar_t1, table_varchar_t2;
+
+#
+# BUG#15588: String overrun
+#
+
+--disable_warnings
+DROP TABLE IF EXISTS table_varchar_t1;
+--enable_warnings
+
+CREATE TABLE table_varchar_t1(f1 VARCHAR(100) DEFAULT 'test');
+INSERT INTO table_varchar_t1 VALUES(SUBSTR(f1, 1, 3));
+DROP TABLE IF EXISTS table_varchar_t1;
+
+CREATE TABLE table_varchar_t1(f1 CHAR(100) DEFAULT 'test');
+INSERT INTO table_varchar_t1 VALUES(SUBSTR(f1, 1, 3));
+DROP TABLE IF EXISTS table_varchar_t1;
+
+#
+# Bug #11927: Warnings shown for CAST( chr as signed) but not (chr + 0)
+#
+CREATE TABLE table_varchar_t1 (a CHAR(2));
+INSERT INTO table_varchar_t1 VALUES (10), (50), (30), ('1a'), (60), ('t');
+SELECT a,(a + 0) FROM table_varchar_t1 ORDER BY a;
+SELECT a,(a DIV 2) FROM table_varchar_t1 ORDER BY a;
+SELECT a,CAST(a AS SIGNED) FROM table_varchar_t1 ORDER BY a;
+DROP TABLE table_varchar_t1;
+
+#
+# Bug #28299: To-number conversion warnings work differenly with CHAR
+# and VARCHAR sp variables
+#
+# * Verify that 'Truncated incorrect DOUBLE value' is shown for 's' 
+#   when using both CHAR and VARCHAR.
+#
+
+CREATE TABLE table_varchar_t1 (a VARCHAR(16));
+INSERT INTO table_varchar_t1 VALUES ('5'), ('s'), ('');
+SELECT 5 = a FROM table_varchar_t1;
+DROP TABLE table_varchar_t1;
+
+CREATE TABLE table_varchar_t1 (a CHAR(16));
+INSERT INTO table_varchar_t1 VALUES ('5'), ('s'), ('');
+SELECT 5 = a FROM table_varchar_t1;
+DROP TABLE table_varchar_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc

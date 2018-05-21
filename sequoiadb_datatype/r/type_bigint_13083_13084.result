@@ -1,0 +1,33 @@
+drop table if exists table_bigint_t1;
+SET SQL_WARNINGS=1;
+create table table_bigint_t1 (a bigint, b bigint unsigned);
+insert into table_bigint_t1 values (-9223372036854775808,0);
+insert into table_bigint_t1 values (0,0);
+insert into table_bigint_t1 values (9223372036854775807,18446744073709551615);
+insert into table_bigint_t1 values ('abcd','abcd');
+ERROR HY000: Incorrect integer value: 'abcd' for column 'a' at row 1
+insert into table_bigint_t1 values (-9223372036854775809,0);
+ERROR 22003: Out of range value for column 'a' at row 1
+insert into table_bigint_t1 values (9223372036854775808,0);
+ERROR 22003: Out of range value for column 'a' at row 1
+insert into table_bigint_t1 values (0,-1);
+ERROR 22003: Out of range value for column 'b' at row 1
+insert into table_bigint_t1 values (0,18446744073709551616);
+ERROR 22003: Out of range value for column 'b' at row 1
+select * from table_bigint_t1 order by a;
+a	b
+-9223372036854775808	0
+0	0
+9223372036854775807	18446744073709551615
+update table_bigint_t1 set a = -1000000000000000 where a <= 0 and b >= 0;
+select * from table_bigint_t1 order by a;
+a	b
+-1000000000000000	0
+-1000000000000000	0
+9223372036854775807	18446744073709551615
+delete from table_bigint_t1 where b > 0;
+select * from table_bigint_t1 order by b;
+a	b
+-1000000000000000	0
+-1000000000000000	0
+drop table table_bigint_t1;

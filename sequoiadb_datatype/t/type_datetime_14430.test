@@ -1,0 +1,440 @@
+#
+# test DATETIME ranges
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_datetime_t1;
+--enable_warnings
+
+create table table_datetime_t1 (t datetime);
+insert ignore into table_datetime_t1 values (101),(691231),(700101),(991231),(10000101),(99991231),(101000000),(691231000000),(700101000000),(991231235959),(10000101000000),(99991231235959),(20030100000000),(20030000000000);
+select * from table_datetime_t1;
+delete from table_datetime_t1 where t > 0;
+optimize table table_datetime_t1;
+check table table_datetime_t1;
+delete from table_datetime_t1;
+insert ignore into table_datetime_t1 values("000101"),("691231"),("700101"),("991231"),("00000101"),("00010101"),("99991231"),("00101000000"),("691231000000"),("700101000000"),("991231235959"),("10000101000000"),("99991231235959"),("20030100000000"),("20030000000000");
+
+# Strange dates
+insert into table_datetime_t1 values ("2003-003-03");
+
+# Bug #7308: ISO-8601 date format not handled correctly
+insert into table_datetime_t1 values ("20030102T131415"),("2001-01-01T01:01:01"), ("2001-1-1T1:01:01");
+select * from table_datetime_t1;
+
+# Test some wrong dates
+truncate table table_datetime_t1;
+insert ignore into table_datetime_t1 values("2003-0303 12:13:14");
+select * from table_datetime_t1;
+drop table table_datetime_t1;
+
+#
+# Test insert of now() and curtime()
+#
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+CREATE TABLE table_datetime_t1 (a timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, b date, c time, d datetime);
+insert into table_datetime_t1 (b,c,d) values(now(),curtime(),now());
+select date_format(a,"%Y-%m-%d")=b,right(a+0,6)=c+0,a=d+0 from table_datetime_t1;
+drop table table_datetime_t1;
+SET sql_mode = default;
+#
+# Test of datetime and not null
+#
+
+CREATE TABLE table_datetime_t1 (a datetime not null);
+insert ignore into table_datetime_t1 values (0);
+select * from table_datetime_t1 where a is null;
+drop table table_datetime_t1;
+
+#
+# Test of datetime optimization
+#
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+CREATE TABLE `table_datetime_t1` (
+  `date` datetime NOT NULL default '0000-00-00 00:00:00',
+  `numfacture` int(6) unsigned NOT NULL default '0',
+  `expedition` datetime NOT NULL default '0000-00-00 00:00:00',
+  PRIMARY KEY  (`numfacture`)
+);
+
+INSERT INTO table_datetime_t1 (expedition) VALUES ('0001-00-00 00:00:00');
+SELECT * FROM table_datetime_t1 WHERE expedition='0001-00-00 00:00:00';
+INSERT INTO table_datetime_t1 (numfacture,expedition) VALUES ('1212','0001-00-00 00:00:00');
+SELECT * FROM table_datetime_t1 WHERE expedition='0001-00-00 00:00:00';
+EXPLAIN SELECT * FROM table_datetime_t1 WHERE expedition='0001-00-00 00:00:00';
+drop table table_datetime_t1;
+create table table_datetime_t1 (a datetime not null, b datetime not null);
+insert into table_datetime_t1 values (now(), now());
+insert into table_datetime_t1 values (now(), now());
+select * from table_datetime_t1 where a is null or b is null;
+drop table table_datetime_t1;
+
+#
+# Let us check if we properly treat wrong datetimes and produce proper
+# warnings (for both strings and numbers)
+#
+create table table_datetime_t1 (t datetime);
+insert into table_datetime_t1 values (20030102030460),(20030102036301),(20030102240401),
+                      (20030132030401),(20031302030401),(100001202030401);
+select * from table_datetime_t1;
+delete from table_datetime_t1;
+insert into table_datetime_t1 values
+  ("2003-01-02 03:04:60"),("2003-01-02 03:63:01"),("2003-01-02 24:04:01"),
+  ("2003-01-32 03:04:01"),("2003-13-02 03:04:01"), ("10000-12-02 03:04:00");
+select * from table_datetime_t1;
+delete from table_datetime_t1;
+insert into table_datetime_t1 values ("0000-00-00 00:00:00 some trailer"),("2003-01-01 00:00:00 some trailer");
+select * from table_datetime_t1 order by t;
+drop table table_datetime_t1;
+
+#
+# Test for bug #7297 "Two digit year should be interpreted correctly even
+# with zero month and day"
+#
+create table table_datetime_t1 (dt datetime);
+# These dates should be treated as dates in 21st century
+insert into table_datetime_t1 values ("12-00-00"), ("00-00-00 01:00:00");
+# Zero dates are still special :/
+insert into table_datetime_t1 values ("00-00-00"), ("00-00-00 00:00:00");
+select * from table_datetime_t1;
+drop table table_datetime_t1;
+SET sql_mode = default;
+#
+# Bug #16546 DATETIME+0 not always coerced the same way 
+#
+select cast('2006-12-05 22:10:10' as datetime) + 0;
+
+#
+# Test of storing datetime into date fields
+#
+
+set @org_mode=@@sql_mode;
+create table table_datetime_t1 (da date default '1962-03-03 23:33:34', dt datetime default '1962-03-03');
+show create table table_datetime_t1;
+insert into table_datetime_t1 values ();
+insert into table_datetime_t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
+set @@sql_mode='ansi,traditional';
+insert into table_datetime_t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
+insert into table_datetime_t1 set dt='2007-03-23 13:49:38',da=dt;
+# Test error handling
+--error ER_TRUNCATED_WRONG_VALUE
+insert into table_datetime_t1 values ('2007-03-32','2007-03-23 13:49:38');
+select * from table_datetime_t1;
+drop table table_datetime_t1;
+--error ER_INVALID_DEFAULT
+create table table_datetime_t1 (da date default '1962-03-32 23:33:34', dt datetime default '1962-03-03');
+--error ER_INVALID_DEFAULT
+create table table_datetime_t1 (t time default '916:00:00 a');
+set @@sql_mode= @org_mode;
+
+
+#
+# Bug#27590: Wrong DATE/DATETIME comparison.  
+#
+## The following sub test will fail (difference to expected result) if the
+## select curdate() < now(), f1 < now(), cast(f1 as date) < now() from table_datetime_t1;
+## runs exact at midnight ('00:00:00').
+## ( Bug#29290 type_datetime.test failure in 5.1 )
+## Therefore we sleep a bit if we are too close to midnight.
+## The complete test itself needs around 1 second.
+## Therefore a time_distance to midnight of 5 seconds should be sufficient.
+if (`SELECT CURTIME() > SEC_TO_TIME(24 * 3600 - 5)`)
+{
+   # We are here when CURTIME() is between '23:59:56' and '23:59:59'.
+   # So a sleep time of 5 seconds brings us between '00:00:01' and '00:00:04'.
+   --real_sleep 5
+}
+create table table_datetime_t1 (f1 date, f2 datetime, f3 timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+insert into table_datetime_t1(f1) values(curdate());
+select curdate() < now(), f1 < now(), cast(f1 as date) < now() from table_datetime_t1;
+delete from table_datetime_t1;
+insert into table_datetime_t1 values('2001-01-01','2001-01-01 01:01:01','2001-01-01 01:01:01');
+insert into table_datetime_t1 values('2001-02-05','2001-02-05 00:00:00','2001-02-05 01:01:01');
+insert into table_datetime_t1 values('2001-03-10','2001-03-09 01:01:01','2001-03-10 01:01:01');
+insert into table_datetime_t1 values('2001-04-15','2001-04-15 00:00:00','2001-04-15 00:00:00');
+insert into table_datetime_t1 values('2001-05-20','2001-05-20 01:01:01','2001-05-20 01:01:01');
+select f1, f3 from table_datetime_t1 where f1 >= '2001-02-05 00:00:00' and f3 <= '2001-04-15';
+select f1, f3 from table_datetime_t1 where f1 >= '2001-2-5 0:0:0' and f2 <= '2001-4-15';
+select f1, f2 from table_datetime_t1 where if(1, f1, 0) >= f2;
+select 1 from dual where cast('2001-1-1 2:3:4' as date) = cast('2001-01-01' as datetime);
+select f1, f2, f1 > f2, f1 = f2, f1 < f2 from table_datetime_t1;
+drop table table_datetime_t1;
+
+#
+# Bug#16377: Wrong DATE/DATETIME comparison in BETWEEN function.
+#
+create table table_datetime_t1 (f1 date, f2 datetime, f3 timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
+insert into table_datetime_t1 values('2001-01-01','2001-01-01 01:01:01','2001-01-01 01:01:01');
+insert into table_datetime_t1 values('2001-02-05','2001-02-05 00:00:00','2001-02-05 01:01:01');
+insert into table_datetime_t1 values('2001-03-10','2001-03-09 01:01:01','2001-03-10 01:01:01');
+insert into table_datetime_t1 values('2001-04-15','2001-04-15 00:00:00','2001-04-15 00:00:00');
+insert into table_datetime_t1 values('2001-05-20','2001-05-20 01:01:01','2001-05-20 01:01:01');
+select f2 from table_datetime_t1 where f2 between '2001-2-5' and '01-04-14';
+select f1, f2, f3 from table_datetime_t1 where f1 between f2 and f3;
+#select f1, f2, f3 from table_datetime_t1 where cast(f1 as datetime) between f2 and
+#  cast(f3 as date);
+select f2 from table_datetime_t1 where '2001-04-10 12:34:56' between f2 and '01-05-01';
+select f2, f3 from table_datetime_t1 where '01-03-10' between f2 and f3;
+select f2 from table_datetime_t1 where DATE(f2) between "2001-4-15" AND "01-4-15";
+SELECT 1 from dual where NOW() BETWEEN CURRENT_DATE() - INTERVAL 1 DAY AND CURRENT_DATE();
+drop table table_datetime_t1;
+
+#
+# Bug#28133: Wrong DATE/DATETIME comparison in IN() function.
+#
+create table table_datetime_t1 (f1 date);
+insert into table_datetime_t1 values('01-01-01'),('01-01-02'),('01-01-03');
+select * from table_datetime_t1 where f1 in ('01-01-01','2001-01-02','2001-01-03 00:00:00');
+create table table_datetime_t2(f2 datetime);
+insert into table_datetime_t2 values('01-01-01 00:00:00'),('01-02-03 12:34:56'),('02-04-06 11:22:33');
+select * from table_datetime_t2 where f2 in ('01-01-01','01-02-03 12:34:56','01-02-03');
+select * from table_datetime_t1,table_datetime_t2 where '01-01-02' in (f1, cast(f2 as date));
+select * from table_datetime_t1,table_datetime_t2 where '01-01-01' in (f1, '01-02-03');
+select * from table_datetime_t1,table_datetime_t2 where if(1,'01-02-03 12:34:56','') in (f1, f2);
+create table table_datetime_t3(f3 varchar(20));
+insert into table_datetime_t3 select * from table_datetime_t2;
+select * from table_datetime_t2,table_datetime_t3 where f2 in (f3,'03-04-05');
+select f1,f2,f3 from table_datetime_t1,table_datetime_t2,table_datetime_t3 where (f1,'1') in ((f2,'1'),(f3,'1'));
+select f1 from table_datetime_t1 where ('1',f1) in (('1','01-01-01'),('1','2001-1-1 0:0:0'),('1','02-02-02'));
+drop table table_datetime_t1,table_datetime_t2,table_datetime_t3;
+
+#
+# Bug#28778: Wrong result of BETWEEN when comparing a DATETIME field with an
+#            integer constants.
+#
+create table table_datetime_t1(f1 datetime);
+insert into table_datetime_t1 values('2001-01-01'),('2002-02-02');
+select * from table_datetime_t1 where f1 between 20020101 and 20070101000000;
+select * from table_datetime_t1 where f1 between 2002010 and 20070101000000;
+select * from table_datetime_t1 where f1 between 20020101 and 2007010100000;
+drop table table_datetime_t1;
+
+--echo #
+--echo # Bug#27216: functions with parameters of different date types may
+--echo #            return wrong type of the result.
+--echo #
+create table table_datetime_t1 (f1 date, f2 datetime, f3 varchar(20));
+create table table_datetime_t2 as select coalesce(f1,f1) as f4 from table_datetime_t1;
+desc table_datetime_t2;
+create table table_datetime_t3 as select coalesce(f1,f2) as f4 from table_datetime_t1;
+desc table_datetime_t3;
+create table table_datetime_t4 as select coalesce(f2,f2) as f4 from table_datetime_t1;
+desc table_datetime_t4;
+create table table_datetime_t5 as select coalesce(f1,f3) as f4 from table_datetime_t1;
+desc table_datetime_t5;
+create table table_datetime_t6 as select coalesce(f2,f3) as f4 from table_datetime_t1;
+desc table_datetime_t6;
+create table table_datetime_t7 as select coalesce(makedate(1997,1),f2) as f4 from table_datetime_t1;
+desc table_datetime_t7;
+create table table_datetime_t8 as select coalesce(cast('01-01-01' as datetime),f2) as f4
+  from table_datetime_t1;
+desc table_datetime_t8;
+create table table_datetime_t9 as select case when 1 then cast('01-01-01' as date)
+  when 0 then cast('01-01-01' as date) end as f4 from table_datetime_t1;
+desc table_datetime_t9;
+create table table_datetime_t10 as select case when 1 then cast('01-01-01' as datetime)
+  when 0 then cast('01-01-01' as datetime) end as f4 from table_datetime_t1;
+desc table_datetime_t10;
+create table table_datetime_t11 as select if(1, cast('01-01-01' as datetime),
+  cast('01-01-01' as date)) as f4 from table_datetime_t1;
+desc table_datetime_t11;
+create table table_datetime_t12 as select least(cast('01-01-01' as datetime),
+  cast('01-01-01' as date)) as f4 from table_datetime_t1;
+desc table_datetime_t12;
+create table table_datetime_t13 as select ifnull(cast('01-01-01' as datetime),
+  cast('01-01-01' as date)) as f4 from table_datetime_t1;
+desc table_datetime_t13;
+drop tables table_datetime_t1,table_datetime_t2,table_datetime_t3,table_datetime_t4,table_datetime_t5,table_datetime_t6,table_datetime_t7,table_datetime_t8,table_datetime_t9,table_datetime_t10,table_datetime_t11,table_datetime_t12,table_datetime_t13;
+
+#
+# Bug #31249: problem with convert(..., datetime)
+#
+create table table_datetime_t1 (a tinyint);
+insert into table_datetime_t1 values (), (), ();
+select sum(a) from table_datetime_t1 group by convert(a, datetime);
+drop table table_datetime_t1;
+
+#
+# Bug #32694: NOT NULL table field in a subquery produces invalid results
+#
+create table table_datetime_t1 (id int(10) not null, cur_date datetime not null);
+create table table_datetime_t2 (id int(10) not null, cur_date date not null);
+insert into table_datetime_t1 (id, cur_date) values (1, '2007-04-25 18:30:22');
+insert into table_datetime_t2 (id, cur_date) values (1, '2007-04-25');
+
+--disable_query_log
+if (`select locate('semijoin', @@optimizer_switch) > 0`) 
+{
+  set optimizer_switch='semijoin=off';
+}
+--enable_query_log
+explain extended
+select * from table_datetime_t1
+where id in (select id from table_datetime_t1 as x1 where (table_datetime_t1.cur_date is null));
+select * from table_datetime_t1
+where id in (select id from table_datetime_t1 as x1 where (table_datetime_t1.cur_date is null));
+
+explain extended
+select * from table_datetime_t2
+where id in (select id from table_datetime_t2 as x1 where (table_datetime_t2.cur_date is null));
+select * from table_datetime_t2
+where id in (select id from table_datetime_t2 as x1 where (table_datetime_t2.cur_date is null));
+
+insert into table_datetime_t1 (id, cur_date) values (2, '2007-04-26 18:30:22');
+insert into table_datetime_t2 (id, cur_date) values (2, '2007-04-26');
+
+explain extended
+select * from table_datetime_t1
+where id in (select id from table_datetime_t1 as x1 where (table_datetime_t1.cur_date is null));
+select * from table_datetime_t1
+where id in (select id from table_datetime_t1 as x1 where (table_datetime_t1.cur_date is null));
+
+explain extended
+select * from table_datetime_t2
+where id in (select id from table_datetime_t2 as x1 where (table_datetime_t2.cur_date is null));
+select * from table_datetime_t2
+where id in (select id from table_datetime_t2 as x1 where (table_datetime_t2.cur_date is null));
+set @@optimizer_switch=default;
+drop table table_datetime_t1,table_datetime_t2;
+
+#
+# Test of storing datetime into date fields
+#
+
+set @org_mode=@@sql_mode;
+create table table_datetime_t1 (da date default '1962-03-03 23:33:34', dt datetime default '1962-03-03');
+show create table table_datetime_t1;
+insert into table_datetime_t1 values ();
+insert into table_datetime_t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
+set @@sql_mode='ansi,traditional';
+insert into table_datetime_t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
+insert into table_datetime_t1 set dt='2007-03-23 13:49:38',da=dt;
+# Test error handling
+--error 1292
+insert into table_datetime_t1 values ('2007-03-32','2007-03-23 13:49:38');
+select * from table_datetime_t1;
+drop table table_datetime_t1;
+--error 1067
+create table table_datetime_t1 (da date default '1962-03-32 23:33:34', dt datetime default '1962-03-03');
+set @@sql_mode= @org_mode;
+
+--echo # 
+--echo # Bug#59173: Failure to handle DATE(TIME) values where Year, Month or
+--echo # Day is ZERO 
+--echo # 
+CREATE TABLE table_datetime_t1 (dtable_datetime_t1 DATETIME);
+INSERT IGNORE INTO table_datetime_t1 (dtable_datetime_t1) VALUES ('0000-00-01 00:00:01');
+DELETE IGNORE  FROM table_datetime_t1 WHERE dtable_datetime_t1 = '0000-00-01 00:00:01';
+--echo # Should be empty
+SELECT * FROM table_datetime_t1;
+DROP TABLE table_datetime_t1;
+
+--echo #
+--echo # Bug#57095: Wrongly chosen expression cache type led to a wrong
+--echo #            result.
+--echo #
+CREATE TABLE table_datetime_t1 (`b` datetime );
+INSERT INTO table_datetime_t1 VALUES ('2010-01-01 00:00:00'), ('2010-01-01 00:00:00');
+SELECT * FROM table_datetime_t1 WHERE b <= coalesce(NULL, now());
+DROP TABLE table_datetime_t1;
+--echo #
+
+--echo #
+--echo # BUG#12561818: RERUN OF STORED FUNCTION GIVES ERROR 1172: 
+--echo #               RESULT CONSISTED OF MORE THAN ONE ROW
+--echo #
+
+CREATE TABLE table_datetime_t1 (a DATE NOT NULL, b INT);
+INSERT IGNORE INTO table_datetime_t1 VALUES ('0000-00-00',1), ('1999-05-10',2);
+
+CREATE TABLE table_datetime_t2 (a DATETIME NOT NULL, b INT);
+INSERT IGNORE INTO table_datetime_t2 VALUES ('0000-00-00 00:00:00',1), ('1999-05-10 00:00:00',2);
+
+--echo
+SELECT * FROM table_datetime_t1 WHERE a IS NULL;
+SELECT * FROM table_datetime_t2 WHERE a IS NULL;
+SELECT * FROM table_datetime_t1 LEFT JOIN table_datetime_t1 AS table_datetime_t1_2 ON 1 WHERE table_datetime_t1_2.a IS NULL;
+SELECT * FROM table_datetime_t2 LEFT JOIN table_datetime_t2 AS table_datetime_t2_2 ON 1 WHERE table_datetime_t2_2.a IS NULL;
+SELECT * FROM table_datetime_t1 JOIN table_datetime_t1 AS table_datetime_t1_2 ON 1 WHERE table_datetime_t1_2.a IS NULL;
+SELECT * FROM table_datetime_t2 JOIN table_datetime_t2 AS table_datetime_t2_2 ON 1 WHERE table_datetime_t2_2.a IS NULL;
+
+--disable_warnings
+DROP TABLE if EXISTS table_datetime_t1, table_datetime_t2, table_datetime_t3;
+--enable_warnings
+
+--echo #
+--echo # WL#946: Testing rounding
+--echo #
+CREATE TABLE table_datetime_t1 (a DATETIME);
+INSERT INTO table_datetime_t1 VALUES ('2001-01-01 10:10:10.9999994'), ('2001-01-01 10:10:10.9999995');
+INSERT INTO table_datetime_t1 VALUES (20010101101010.9999994), (20010101101010.9999995);
+SELECT * FROM table_datetime_t1;
+DROP TABLE table_datetime_t1;
+
+--disable_warnings
+DROP TABLE if EXISTS table_datetime_t1, table_datetime_t2, table_datetime_t3;
+--enable_warnings
+SET @org_mode=@@sql_mode;
+
+--echo #Table creation in strict mode
+SET @@sql_mode='NO_ZERO_DATE,STRICT_ALL_TABLES';
+--error ER_INVALID_DEFAULT
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT 0);
+--error ER_INVALID_DEFAULT
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT '0000-00-00 00:00:00');
+SET @@sql_mode='NO_ZERO_IN_DATE,STRICT_ALL_TABLES';
+--error ER_INVALID_DEFAULT
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT '2012-02-00 12:12:12');
+
+--echo #Table creation in non-strict mode but with NO_ZERO_DATE/NO_ZERO_IN_DATE
+SET @@sql_mode='NO_ZERO_DATE';
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT 0);
+CREATE TABLE table_datetime_t2 (c1 DATETIME DEFAULT '0000-00-00 00:00:00');
+SET @@sql_mode='NO_ZERO_IN_DATE';
+CREATE TABLE table_datetime_t3 (c1 DATETIME DEFAULT '2012-02-00 12:12:12');
+DROP TABLE table_datetime_t1, table_datetime_t2, table_datetime_t3;
+
+--echo #Table creation with out any SQL modes
+SET @@sql_mode='';
+CREATE TABLE table_datetime_t1 (c1 DATETIME DEFAULT 0);
+CREATE TABLE table_datetime_t2 (c1 DATETIME DEFAULT '0000-00-00 00:00:00');
+CREATE TABLE table_datetime_t3 (c1 DATETIME DEFAULT '2012-02-00 12:12:12');
+DROP TABLE table_datetime_t1, table_datetime_t2, table_datetime_t3;
+
+CREATE TABLE table_datetime_t1 (c1 int);
+--echo #Alter table in strict mode with NO_ZERO_DATE/NO_ZERO_IN_DATE
+SET @@sql_mode='NO_ZERO_DATE,STRICT_ALL_TABLES';
+--error ER_INVALID_DEFAULT
+ALTER TABLE table_datetime_t1 ADD c2 DATETIME DEFAULT 0;
+--error ER_INVALID_DEFAULT
+ALTER TABLE table_datetime_t1 ADD c2 DATETIME DEFAULT '0000-00-00';
+SET @@sql_mode='NO_ZERO_IN_DATE,STRICT_ALL_TABLES';
+--error ER_INVALID_DEFAULT
+ALTER TABLE table_datetime_t1 ADD c2 DATETIME DEFAULT '2012-02-00';
+DROP TABLE if exists table_datetime_t1;
+
+# Remark
+# Add range check
+# create table and insert
+create table table_datetime_t1 (a datetime);
+insert into table_datetime_t1 values ('1970-10-01');
+insert into table_datetime_t1 values ('2000-01-01');
+insert into table_datetime_t1 values ('2037-12-31');
+--error 1292
+insert into table_datetime_t1 values ('abcd');
+--error 1292
+insert into table_datetime_t1 values ('99999-01-01');
+select * from table_datetime_t1 order by a;
+
+# update
+update table_datetime_t1 set a = '2018-01-01 11:00:00' where a = '1970-10-01 00:00:00';
+# select 
+select * from table_datetime_t1 order by a;
+# delete
+delete from table_datetime_t1 where a = '1970-10-01 00:00:00';
+# select
+select * from table_datetime_t1 order by a;
+drop table table_datetime_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc

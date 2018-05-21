@@ -1,0 +1,36 @@
+#
+# test transaction ddl
+#
+--source suite/sequoiadb_query/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_transddl_t1;
+--enable_warnings
+
+# begin transaction
+START TRANSACTION;
+# ddl
+CREATE TABLE table_transddl_t1 (a INT NOT NULL, b text);
+# rollback
+ROLLBACK;
+SHOW CREATE TABLE table_transddl_t1;
+
+# begin transaction
+START TRANSACTION;
+# ddl
+ALTER TABLE table_transddl_t1 ADD INDEX a (a);
+# rollback
+ROLLBACK;
+SHOW INDEX IN table_transddl_t1;
+
+# begin transaction
+START TRANSACTION;
+# ddl
+DROP TABLE table_transddl_t1;
+# rollback
+ROLLBACK;
+--error 1146
+SHOW CREATE TABLE table_transddl_t1;
+DROP TABLE IF EXISTS table_transddl_t1;
+
+--source suite/sequoiadb_query/include/uninstall_sequoiadb.inc

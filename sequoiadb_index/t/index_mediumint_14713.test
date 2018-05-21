@@ -1,0 +1,43 @@
+
+#
+# test index of mediumint 
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_idx_mint_t1;
+--enable_warnings
+SET SQL_WARNINGS=1;
+
+# create table and insert
+create table table_idx_mint_t1 (a mediumint);
+insert into table_idx_mint_t1 values (-8388608);
+insert into table_idx_mint_t1 values (0);
+insert into table_idx_mint_t1 values (1001);
+insert into table_idx_mint_t1 values (1000001);
+insert into table_idx_mint_t1 values (8388600);
+insert into table_idx_mint_t1 values (8388606);
+insert into table_idx_mint_t1 values (8388607);
+insert into table_idx_mint_t1 values ();
+# create index
+create index a on table_idx_mint_t1 (a);
+# out of range
+--error 1264
+insert into table_idx_mint_t1 values (-9223372036854775809);
+--error 1264
+insert into table_idx_mint_t1 values (9223372036854775808);
+# select
+select * from table_idx_mint_t1 order by a;
+select a from table_idx_mint_t1 where a = 0;
+select a from table_idx_mint_t1 where a >= 0 order by a;
+select a from table_idx_mint_t1 where a <= 0 order by a;
+select * from table_idx_mint_t1 where a between 1 and 8388600 order by a;
+select * from table_idx_mint_t1 where a is null;
+select * from table_idx_mint_t1 where a != 0  order by a;
+select * from table_idx_mint_t1 where a <> 0 order by a;
+select * from table_idx_mint_t1 where a > -9223372036854775809 order by a limit 2;
+select * from table_idx_mint_t1 where a < 9223372036854775808 order by a limit 3 offset 3;
+drop table table_idx_mint_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc
+# End of 4.1 tests

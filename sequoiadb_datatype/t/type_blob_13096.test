@@ -1,0 +1,129 @@
+#
+# test blob
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_blob_t1,table_blob_t2,table_blob_t3,table_blob_t4;
+--enable_warnings
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+
+#
+# Check syntax for creating BLOB/TEXT
+#
+CREATE TABLE table_blob_t1 (a blob, b mediumblob, c tinyblob, d longblob);
+show columns from table_blob_t1;
+drop table table_blob_t1;
+
+#
+# Check errors with blob
+#
+--error 1101
+CREATE TABLE table_blob_t1 (a blob default "hello");
+--error 1101
+CREATE TABLE table_blob_t2 (a mediumblob default "hello");
+--error 1101
+CREATE TABLE table_blob_t3 (a tinyblob default "hello");
+--error 1101
+CREATE TABLE table_blob_t4 (a longblob default "hello");
+
+# Safety to be able to continue with other tests if above fails
+--disable_warnings
+drop table if exists table_blob_t1,table_blob_t2,table_blob_t3,table_blob_t4;
+--enable_warnings
+
+#
+# Test of reverse with empty blob
+#
+
+create table table_blob_t1 (a blob);
+insert into table_blob_t1 values ("empty"),("");
+select a,reverse(a) from table_blob_t1;
+drop table table_blob_t1;
+
+#
+# Test of BLOB:s with NULL keys.
+#
+
+create table table_blob_t1 (a blob);
+insert into table_blob_t1 values ("bye"),("hello"),("hello"),("hello word");
+select * from table_blob_t1 where a like "hello%";
+drop table table_blob_t1;
+
+#
+# Test of found bug when blob is first key part
+#
+
+create table table_blob_t1 (foobar tinyblob not null, boggle smallint not null);
+insert into table_blob_t1 values ('fish', 10),('bear', 20);
+#--error 1406
+#insert into table_blob_t1 values ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 30);
+select foobar, boggle from table_blob_t1 where foobar = 'fish';
+select foobar, boggle from table_blob_t1 where foobar = 'fish' and boggle = 10;
+# update
+update table_blob_t1 set foobar = 'cat' where boggle = 10;
+# select
+select foobar, boggle from table_blob_t1 where boggle = 10;
+# delete
+delete from table_blob_t1 where boggle = 10;
+# select 
+select foobar, boggle from table_blob_t1;
+drop table table_blob_t1;
+
+#
+# Test that blob's and varbinary are sorted according to length
+#
+
+CREATE table table_blob_t1 (a blob);
+insert into table_blob_t1 values ('b'),('a\0'),('a'),('a '),('aa'),(NULL);
+# update
+update table_blob_t1 set a = 'abc' where a = 'b';
+# select
+select * from table_blob_t1 order by a;
+# delete
+delete from table_blob_t1 where a = 'aa';
+# select 
+select * from table_blob_t1 order by a;
+select hex(a) from table_blob_t1 order by a;
+select hex(concat(a,'\0')) as b from table_blob_t1 order by concat(a,'\0');
+drop table table_blob_t1;
+
+set sql_mode="";
+CREATE TABLE table_blob_t1(a LONGBLOB NOT NULL) engine=sequoiadb default charset=latin1;
+INSERT INTO table_blob_t1 VALUES (''),(''),(''),('');
+CREATE TABLE table_blob_t2 (b LONGTEXT) engine=sequoiadb default charset=latin1;
+INSERT INTO table_blob_t2 VALUES ('a');
+SELECT ( SELECT ( b <> 1 ) FROM table_blob_t2) <> ALL(SELECT 1681007452 FROM table_blob_t1) FROM table_blob_t1;
+SELECT ( SELECT ( b <> 1 ) FROM table_blob_t2) <> ALL(SELECT 1681007452 FROM table_blob_t1) FROM table_blob_t1;
+DROP TABLE table_blob_t1,table_blob_t2;
+set sql_mode=default;
+drop table if exists table_blob_t1;
+
+# BLOB types
+--disable_warnings
+drop table if exists b15776;
+--enable_warnings
+create table b15776 (data blob(2147483647));
+drop table b15776;
+--error ER_PARSE_ERROR
+create table b15776 (data blob(-1));
+create table b15776 (data blob(2147483648));
+drop table b15776;
+create table b15776 (data blob(4294967294));
+drop table b15776;
+create table b15776 (data blob(4294967295));
+drop table b15776;
+--error ER_TOO_BIG_DISPLAYWIDTH
+create table b15776 (data blob(4294967296));
+
+CREATE TABLE b15776 (a blob(2147483647), b blob(2147483648), c blob(4294967295) );
+show columns from b15776;
+drop table b15776;
+
+--error ER_TOO_BIG_DISPLAYWIDTH
+CREATE TABLE b15776 (a blob(4294967296));
+--error ER_TOO_BIG_DISPLAYWIDTH
+CREATE TABLE b15776 (a blob(999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999));
+DROP TABLE IF EXISTS table_blob_t1,table_blob_t2;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc

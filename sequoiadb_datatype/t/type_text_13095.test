@@ -1,0 +1,96 @@
+#
+# test Text
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_text_t1,table_text_t2;
+--enable_warnings
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+
+#
+# Check syntax for creating TEXT
+#
+CREATE TABLE table_text_t1 (a text(70000), b tinytext, c mediumtext, d longtext);
+show columns from table_text_t1;
+# insert
+insert into table_text_t1 values ('aaaa', 'aaaa', 'aaaa', 'aaaa'), ('bbbb', 'bbbb', 'bbbb', 'bbbb');
+#--error 1406
+#insert into table_text_t1 values('c', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','c','c');
+# select
+select * from table_text_t1 order by a;
+# update
+update table_text_t1 set a = 'newa',b = 'newb', c = 'newc', d = 'newd' where a = 'aaaa';
+# select
+select * from table_text_t1 order by a;
+# delete
+delete from table_text_t1 where a = 'newa';
+# selete 
+select * from table_text_t1 order by a;
+# PS doesn't give errors on prepare yet
+drop table table_text_t1;
+
+#
+# Check errors with text
+#
+--error 1101
+CREATE TABLE table_text_t2 (a text default "hello");
+
+# Safety to be able to continue with other tests if above fails
+--disable_warnings
+drop table if exists table_text_t1,table_text_t2;
+--enable_warnings
+
+#
+# Test of changing TEXT column
+#
+
+create table table_text_t1 (a text);
+insert into table_text_t1 values ('where');
+update table_text_t1 set a='Where'; 
+select * from table_text_t1;
+drop table table_text_t1;
+
+-- error 1071
+create table table_text_t1 (a text, unique (a(2100))); # should give an error
+create table table_text_t1 (a text, key (a(2100)));    # key is auto-truncated
+show create table table_text_t1;
+drop table table_text_t1;
+
+#
+# Test of found bug in group on text key
+#
+
+CREATE TABLE table_text_t1 (
+       f1 int(11) DEFAULT '0' NOT NULL,
+       f2 varchar(16) DEFAULT '' NOT NULL,
+       f5 text,
+       KEY index_name (f1,f2,f5(16))
+    );
+INSERT INTO table_text_t1 VALUES (0,'traktor','1111111111111');
+INSERT INTO table_text_t1 VALUES (1,'traktor','1111111111111111111111111');
+select count(*) from table_text_t1 where f2='traktor';
+drop table table_text_t1;
+
+#
+# Bug #19489: Inconsistent support for DEFAULT in TEXT columns
+#
+create table table_text_t1 (a text default '');
+show create table table_text_t1;
+insert into table_text_t1 values (default);
+select * from table_text_t1;
+drop table table_text_t1;
+set @@sql_mode='TRADITIONAL';
+--error ER_BLOB_CANT_HAVE_DEFAULT
+create table table_text_t1 (a text default '');
+set @@sql_mode='';
+
+--error ER_TOO_BIG_DISPLAYWIDTH
+CREATE TABLE b15776 (a text(4294967296));
+--error ER_TOO_BIG_DISPLAYWIDTH
+CREATE TABLE b15776 (a text(999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999));
+
+--error ER_TOO_BIG_DISPLAYWIDTH
+CREATE TABLE b15776 (a char(4294967296));
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc

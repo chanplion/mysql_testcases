@@ -1,0 +1,982 @@
+# Test subquery 
+
+# This portion of the file vas developed when subquery materialization
+# was rule-based; to preserve the intended test scenarios, we switch
+# off cost-based choice for them.
+set @old_opt_switch=@@optimizer_switch;
+set optimizer_switch='subquery_materialization_cost_based=off';
+SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+
+# Init
+--source suite/sequoiadb_query/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_subq_t1,table_subq_t2,table_subq_t3,table_subq_t4,table_subq_t5,table_subq_t6,table_subq_t7,table_subq_t8,table_subq_t11,table_subq_t12;
+--enable_warnings
+
+create table table_subq_t1 (a int);
+create table table_subq_t2 (a int, b int);
+create table table_subq_t3 (a int);
+create table table_subq_t4 (a int not null, b int not null);
+insert into table_subq_t1 values (2);
+insert into table_subq_t2 values (1,7),(2,7);
+insert into table_subq_t4 values (4,8),(3,8),(5,9);
+-- error ER_ILLEGAL_REFERENCE
+select (select a from table_subq_t1 where table_subq_t1.a = a1) as a2, (select b from table_subq_t2 where table_subq_t2.b=a2) as a1;
+#select (select a from table_subq_t1 where table_subq_t1.a=table_subq_t2.a), a from table_subq_t2;
+select (select a from table_subq_t1 where table_subq_t1.a=table_subq_t2.b), a from table_subq_t2;
+#select (select a from table_subq_t1), a, (select 1 union select 2 limit 1) from table_subq_t2;
+#select (select a from table_subq_t3), a from table_subq_t2;
+#select * from table_subq_t2 where table_subq_t2.a=(select a from table_subq_t1);
+insert into table_subq_t3 values (6),(7),(3);
+select * from table_subq_t2 where table_subq_t2.b=(select a from table_subq_t3 order by 1 desc limit 1) order by a;
+(select * from table_subq_t2 where table_subq_t2.b=(select a from table_subq_t3 order by 1 desc limit 1)) union (select * from table_subq_t4 order by a limit 2) limit 3;
+(select * from table_subq_t2 where table_subq_t2.b=(select a from table_subq_t3 order by 1 desc limit 1)) union (select * from table_subq_t4 where table_subq_t4.b=(select max(table_subq_t2.a)*4 from table_subq_t2)) order by a;
+select (select a from table_subq_t3 where a<table_subq_t2.a*4 order by 1 desc limit 1), a from table_subq_t2 order by a;
+select (select table_subq_t3.a from table_subq_t3 where a<8 order by 1 desc limit 1), a from (select * from table_subq_t2 where a>1) as tt;
+select * from table_subq_t1 where table_subq_t1.a=(select table_subq_t2.a from table_subq_t2 where table_subq_t2.b=(select max(a) from table_subq_t3) order by 1 desc limit 1);
+select * from table_subq_t1 where table_subq_t1.a=(select table_subq_t2.a from table_subq_t2 where table_subq_t2.b=(select max(a) from table_subq_t3 where table_subq_t3.a > table_subq_t1.a) order by 1 desc limit 1);
+select * from table_subq_t1 where table_subq_t1.a=(select table_subq_t2.a from table_subq_t2 where table_subq_t2.b=(select max(a) from table_subq_t3 where table_subq_t3.a < table_subq_t1.a) order by 1 desc limit 1);
+select b,(select avg(table_subq_t2.a+(select min(table_subq_t3.a) from table_subq_t3 where table_subq_t3.a >= table_subq_t4.a)) from table_subq_t2) from table_subq_t4 order by a;
+#select * from table_subq_t3 where exists (select * from table_subq_t2 where table_subq_t2.b=table_subq_t3.a);
+select * from table_subq_t3 where not exists (select * from table_subq_t2 where table_subq_t2.b=table_subq_t3.a) order by a;
+select * from table_subq_t3 where a in (select b from table_subq_t2);
+select * from table_subq_t3 where a not in (select b from table_subq_t2) order by a;
+select * from table_subq_t3 where a = some (select b from table_subq_t2);
+select * from table_subq_t3 where a <> any (select b from table_subq_t2) order by a;
+
+# Rewrite: select * from table_subq_t3 where not exists (select b from table_subq_t2 where a <> b);
+select * from table_subq_t3 where a = all (select b from table_subq_t2);
+
+select * from table_subq_t3 where a <> all (select b from table_subq_t2) order by a;
+insert into table_subq_t2 values (100, 5);
+select * from table_subq_t3 where a < any (select b from table_subq_t2) order by a;
+select * from table_subq_t3 where a < all (select b from table_subq_t2);
+select * from table_subq_t3 where a >= any (select b from table_subq_t2) order by a;
+select * from table_subq_t3 where a >= all (select b from table_subq_t2);
+delete from table_subq_t2 where a=100;
+-- error ER_OPERAND_COLUMNS
+select * from table_subq_t3 where a in (select a,b from table_subq_t2);
+-- error ER_OPERAND_COLUMNS
+select * from table_subq_t3 where a in (select * from table_subq_t2);
+insert into table_subq_t4 values (12,7),(1,7),(10,9),(9,6),(7,6),(3,9),(1,10);
+# empty set
+select b,max(a) as ma from table_subq_t4 group by b having b < (select max(table_subq_t2.a) from table_subq_t2 where table_subq_t2.b=table_subq_t4.b);
+insert into table_subq_t2 values (2,10);
+select b,max(a) as ma from table_subq_t4 group by b having ma < (select max(table_subq_t2.a) from table_subq_t2 where table_subq_t2.b=table_subq_t4.b);
+delete from table_subq_t2 where a=2 and b=10;
+select b,max(a) as ma from table_subq_t4 group by b having b >= (select max(table_subq_t2.a) from table_subq_t2 where table_subq_t2.b=table_subq_t4.b);
+create table table_subq_t5 (a int);
+select (select a from table_subq_t1 where table_subq_t1.a=table_subq_t2.a union select a from table_subq_t5 where table_subq_t5.a=table_subq_t2.a), a from table_subq_t2 order by a;
+insert into table_subq_t5 values (5);
+select (select a from table_subq_t1 where table_subq_t1.a=table_subq_t2.a union select a from table_subq_t5 where table_subq_t5.a=table_subq_t2.a), a from table_subq_t2 order by a;
+insert into table_subq_t5 values (2);
+select (select a from table_subq_t1 where table_subq_t1.a=table_subq_t2.a union select a from table_subq_t5 where table_subq_t5.a=table_subq_t2.a), a from table_subq_t2 order by a;
+-- error ER_SUBQUERY_NO_1_ROW
+select (select a from table_subq_t1 where table_subq_t1.a=table_subq_t2.a union all select a from table_subq_t5 where table_subq_t5.a=table_subq_t2.a), a from table_subq_t2;
+create table table_subq_t6 (patient_uq int, clinic_uq int, index i1 (clinic_uq));
+create table table_subq_t7( uq int primary key, name char(25));
+insert into table_subq_t7 values(1,"Oblastnaia bolnitsa"),(2,"Bolnitsa Krasnogo Kresta");
+insert into table_subq_t6 values (1,1),(1,2),(2,2),(1,3);
+#select * from table_subq_t6 where exists (select * from table_subq_t7 where uq = clinic_uq);
+#explain extended select * from table_subq_t6 where exists (select * from table_subq_t7 where uq = clinic_uq);
+
+# not unique fields
+-- error ER_NON_UNIQ_ERROR
+select * from table_subq_t1 where a= (select a from table_subq_t2,table_subq_t4 where table_subq_t2.b=table_subq_t4.b);
+
+# different tipes & group functions
+drop table table_subq_t1,table_subq_t2,table_subq_t3;
+
+CREATE TABLE table_subq_t3 (a varchar(20),b char(1) NOT NULL default '0');
+INSERT INTO table_subq_t3 VALUES ('W','a'),('A','c'),('J','b');
+CREATE TABLE table_subq_t2 (a varchar(20),b int NOT NULL default '0');
+INSERT INTO table_subq_t2 VALUES ('W','1'),('A','3'),('J','2');
+CREATE TABLE table_subq_t1 (a varchar(20),b date NOT NULL default '1000-01-01');
+INSERT INTO table_subq_t1 VALUES ('W','1732-02-22'),('A','1735-10-30'),('J','1743-04-13');
+SELECT * FROM table_subq_t1 WHERE b = (SELECT MIN(b) FROM table_subq_t1);
+SELECT * FROM table_subq_t2 WHERE b = (SELECT MIN(b) FROM table_subq_t2);
+SELECT * FROM table_subq_t3 WHERE b = (SELECT MIN(b) FROM table_subq_t3);
+
+CREATE TABLE `table_subq_t8` (
+  `pseudo` varchar(35) character set latin1 NOT NULL default '',
+  `email` varchar(60) character set latin1 NOT NULL default '',
+  PRIMARY KEY  (`pseudo`),
+  UNIQUE KEY `email` (`pseudo`,`email`)
+);
+
+INSERT INTO table_subq_t8 (pseudo,email) VALUES ('joce','test');
+INSERT INTO table_subq_t8 (pseudo,email) VALUES ('joce1','testable_subq_t1');
+INSERT INTO table_subq_t8 (pseudo,email) VALUES ('2joce1','2testable_subq_t1');
+-- error ER_OPERAND_COLUMNS
+SELECT pseudo FROM table_subq_t8 WHERE pseudo=(SELECT pseudo,email FROM
+table_subq_t8 WHERE pseudo='joce');
+-- error ER_OPERAND_COLUMNS
+SELECT pseudo FROM table_subq_t8 WHERE pseudo=(SELECT * FROM table_subq_t8 WHERE
+pseudo='joce');
+SELECT pseudo FROM table_subq_t8 WHERE pseudo=(SELECT pseudo FROM table_subq_t8 WHERE pseudo='joce');
+-- error ER_SUBQUERY_NO_1_ROW
+SELECT pseudo FROM table_subq_t8 WHERE pseudo=(SELECT pseudo FROM table_subq_t8 WHERE pseudo LIKE '%joce%');
+
+drop table if exists table_subq_t1,table_subq_t2,table_subq_t3,table_subq_t4,table_subq_t5,table_subq_t6,table_subq_t7,table_subq_t8;
+CREATE TABLE `table_subq_t1` (
+  `numeropost` mediumint(8) unsigned NOT NULL,
+  `maxnumrep` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`numeropost`),
+  UNIQUE KEY `maxnumrep` (`numeropost`,`maxnumrep`)
+);
+
+INSERT INTO table_subq_t1 (numeropost,maxnumrep) VALUES (1,0),(2,1);
+
+--source suite/sequoiadb_query/include/turn_off_only_full_group_by.inc
+-- error ER_SUBQUERY_NO_1_ROW
+select numeropost as a FROM table_subq_t1 GROUP BY (SELECT 1 FROM table_subq_t1 HAVING a=1);
+--source suite/sequoiadb_query/include/restore_sql_mode_after_turn_off_only_full_group_by.inc
+
+-- error ER_SUBQUERY_NO_1_ROW
+select numeropost as a FROM table_subq_t1 ORDER BY (SELECT 1 FROM table_subq_t1 HAVING a=1);
+drop table table_subq_t1;
+
+create table table_subq_t1 (a int);
+insert into table_subq_t1 values (1),(2),(3);
+(select * from table_subq_t1) union (select * from table_subq_t1) order by (select a from table_subq_t1 limit 1);
+drop table table_subq_t1;
+
+#iftest
+CREATE TABLE table_subq_t1 (field char(1) NOT NULL DEFAULT 'b');
+INSERT INTO table_subq_t1 VALUES ();
+-- error ER_SUBQUERY_NO_1_ROW
+SELECT field FROM table_subq_t1 WHERE 1=(SELECT 1 UNION ALL SELECT 1 FROM (SELECT 1) a HAVING field='b');
+drop table table_subq_t1;
+
+CREATE TABLE `table_subq_t1` (
+  `numeropost` mediumint(8) unsigned NOT NULL default '0',
+  `numreponse` int(10) unsigned NOT NULL,
+  `pseudo` varchar(35) NOT NULL default '',
+  PRIMARY KEY  (`numeropost`,`numreponse`),
+  KEY `pseudo` (`pseudo`,`numeropost`)
+);
+-- error ER_ILLEGAL_REFERENCE
+SELECT (SELECT numeropost FROM table_subq_t1 HAVING numreponse=a),numreponse FROM (SELECT * FROM table_subq_t1) as a;
+-- error ER_BAD_FIELD_ERROR
+SELECT numreponse, (SELECT numeropost FROM table_subq_t1 HAVING numreponse=a) FROM (SELECT * FROM table_subq_t1) as a;
+SELECT numreponse, (SELECT numeropost FROM table_subq_t1 HAVING numreponse=1) FROM (SELECT * FROM table_subq_t1) as a;
+INSERT INTO table_subq_t1 (numeropost,numreponse,pseudo) VALUES (1,1,'joce'),(1,2,'joce'),(1,3,'test');
+drop table table_subq_t1;
+
+CREATE TABLE table_subq_t1 (a int(1));
+INSERT INTO table_subq_t1 VALUES (1);
+SELECT 1 FROM (SELECT a FROM table_subq_t1) b HAVING (SELECT b.a)=1;
+drop table table_subq_t1;
+
+#update with subselects
+create table table_subq_t1 (a int NOT NULL, b int, primary key (a));
+create table table_subq_t2 (a int NOT NULL, b int, primary key (a));
+insert into table_subq_t1 values (0, 10),(1, 11),(2, 12);
+insert into table_subq_t2 values (1, 21),(2, 22),(3, 23);
+select * from table_subq_t1 order by a;
+-- error ER_UPDATE_TABLE_USED
+update table_subq_t1 set b= (select b from table_subq_t1);
+-- error ER_SUBQUERY_NO_1_ROW
+update table_subq_t1 set b= (select b from table_subq_t2);
+update table_subq_t1 set b= (select b from table_subq_t2 where table_subq_t1.a = table_subq_t2.a);
+select * from table_subq_t1 order by a;
+drop table table_subq_t1, table_subq_t2;
+
+#delete with subselects
+create table table_subq_t1 (a int NOT NULL, b int, primary key (a));
+create table table_subq_t2 (a int NOT NULL, b int, primary key (a));
+insert into table_subq_t1 values (0, 10),(1, 11),(2, 12);
+insert into table_subq_t2 values (1, 21),(2, 12),(3, 23);
+select * from table_subq_t1 order by a;
+select * from table_subq_t1 where b = (select b from table_subq_t2 where table_subq_t1.a = table_subq_t2.a);
+-- error ER_UPDATE_TABLE_USED
+delete from table_subq_t1 where b = (select b from table_subq_t1);
+-- error ER_SUBQUERY_NO_1_ROW
+delete from table_subq_t1 where b = (select b from table_subq_t2);
+delete from table_subq_t1 where b = (select b from table_subq_t2 where table_subq_t1.a = table_subq_t2.a);
+select * from table_subq_t1 order by a;
+drop table table_subq_t1, table_subq_t2;
+
+#multi-delete with subselects
+
+create table table_subq_t11 (a int NOT NULL, b int, primary key (a));
+create table table_subq_t12 (a int NOT NULL, b int, primary key (a));
+create table table_subq_t2 (a int NOT NULL, b int, primary key (a));
+insert into table_subq_t11 values (0, 10),(1, 11),(2, 12);
+insert into table_subq_t12 values (33, 10),(22, 11),(2, 12);
+insert into table_subq_t2 values (1, 21),(2, 12),(3, 23);
+select * from table_subq_t11 order by a;
+select * from table_subq_t12 order by a;
+-- error ER_UPDATE_TABLE_USED
+delete table_subq_t11.*, table_subq_t12.* from table_subq_t11,table_subq_t12 where table_subq_t11.a = table_subq_t12.a and table_subq_t11.b = (select b from table_subq_t12 where table_subq_t11.a = table_subq_t12.a);
+-- error ER_SUBQUERY_NO_1_ROW
+delete table_subq_t11.*, table_subq_t12.* from table_subq_t11,table_subq_t12 where table_subq_t11.a = table_subq_t12.a and table_subq_t11.b = (select b from table_subq_t2);
+delete table_subq_t11.*, table_subq_t12.* from table_subq_t11,table_subq_t12 where table_subq_t11.a = table_subq_t12.a and table_subq_t11.b = (select b from table_subq_t2 where table_subq_t11.a = table_subq_t2.a);
+select * from table_subq_t11 order by a;
+select * from table_subq_t12 order by a;
+drop table table_subq_t11, table_subq_t12, table_subq_t2;
+
+#insert with subselects
+CREATE TABLE table_subq_t1 (x int);
+create table table_subq_t2 (a int);
+create table table_subq_t3 (b int);
+insert into table_subq_t2 values (1);
+insert into table_subq_t3 values (1),(2);
+-- error ER_UPDATE_TABLE_USED
+INSERT INTO table_subq_t1 (x) VALUES ((SELECT x FROM table_subq_t1));
+-- error ER_SUBQUERY_NO_1_ROW
+INSERT INTO table_subq_t1 (x) VALUES ((SELECT b FROM table_subq_t3));
+INSERT INTO table_subq_t1 (x) VALUES ((SELECT a FROM table_subq_t2));
+select * from table_subq_t1 order by x;
+insert into table_subq_t2 values (1);
+INSERT INTO table_subq_t1 (x) select (SELECT SUM(a)+1 FROM table_subq_t2) FROM table_subq_t2;
+select * from table_subq_t1 order by x;
+# After this, only data based on old table_subq_t1 records should have been added.
+INSERT INTO table_subq_t1 (x) select (SELECT SUM(x)+2 FROM table_subq_t1) FROM table_subq_t2;
+select * from table_subq_t1 order by x;
+-- error ER_BAD_FIELD_ERROR
+INSERT INTO table_subq_t1 (x) VALUES ((SELECT SUM(x) FROM table_subq_t2));
+INSERT INTO table_subq_t1 (x) SELECT (SELECT SUM(a)+b FROM table_subq_t2) from table_subq_t3;
+select * from table_subq_t1 order by x;
+drop table table_subq_t1, table_subq_t2, table_subq_t3;
+
+-- error ER_NO_TABLES_USED
+SELECT * FROM (SELECT 1) b WHERE 1 IN (SELECT *);
+
+CREATE TABLE table_subq_t2 (id int(11) default NULL, KEY id (id));
+INSERT INTO table_subq_t2 VALUES (1),(2);
+SELECT * FROM table_subq_t2 WHERE id IN (SELECT 1);
+SELECT * FROM table_subq_t2 WHERE id IN (SELECT 1 UNION SELECT 3);
+SELECT * FROM table_subq_t2 WHERE id IN (SELECT 1+(select 1));
+SELECT * FROM table_subq_t2 WHERE id IN (SELECT 5 UNION SELECT 3);
+SELECT * FROM table_subq_t2 WHERE id IN (SELECT 5 UNION SELECT 2);
+-- error ER_UPDATE_TABLE_USED
+INSERT INTO table_subq_t2 VALUES ((SELECT * FROM table_subq_t2));
+-- error ER_UPDATE_TABLE_USED
+INSERT INTO table_subq_t2 VALUES ((SELECT id FROM table_subq_t2));
+SELECT * FROM table_subq_t2 order by id;
+CREATE TABLE table_subq_t1 (id int(11) default NULL, KEY id (id));
+INSERT INTO table_subq_t1 values (1),(1);
+-- error ER_SUBQUERY_NO_1_ROW
+UPDATE table_subq_t2 SET id=(SELECT * FROM table_subq_t1);
+drop table table_subq_t2, table_subq_t1;
+
+#NULL test
+create table table_subq_t1 (a int);
+insert into table_subq_t1 values (1),(2),(3);
+select 1 IN (SELECT * from table_subq_t1);
+select 10 IN (SELECT * from table_subq_t1);
+select NULL IN (SELECT * from table_subq_t1);
+update table_subq_t1 set a=NULL where a=2;
+select 1 IN (SELECT * from table_subq_t1);
+select 3 IN (SELECT * from table_subq_t1);
+select 10 IN (SELECT * from table_subq_t1);
+select 1 > ALL (SELECT * from table_subq_t1);
+select 10 > ALL (SELECT * from table_subq_t1);
+select 1 > ANY (SELECT * from table_subq_t1);
+select 10 > ANY (SELECT * from table_subq_t1);
+drop table table_subq_t1;
+create table table_subq_t1 (a varchar(20));
+insert into table_subq_t1 values ('A'),('BC'),('DEF');
+select 'A' IN (SELECT * from table_subq_t1);
+select 'XYZS' IN (SELECT * from table_subq_t1);
+select NULL IN (SELECT * from table_subq_t1);
+update table_subq_t1 set a=NULL where a='BC';
+select 'A' IN (SELECT * from table_subq_t1);
+select 'DEF' IN (SELECT * from table_subq_t1);
+select 'XYZS' IN (SELECT * from table_subq_t1);
+select 'A' > ALL (SELECT * from table_subq_t1);
+select 'XYZS' > ALL (SELECT * from table_subq_t1);
+select 'A' > ANY (SELECT * from table_subq_t1);
+select 'XYZS' > ANY (SELECT * from table_subq_t1);
+drop table table_subq_t1;
+create table table_subq_t1 (a float);
+insert into table_subq_t1 values (1.5),(2.5),(3.5);
+select 1.5 IN (SELECT * from table_subq_t1);
+select 10.5 IN (SELECT * from table_subq_t1);
+select NULL IN (SELECT * from table_subq_t1);
+update table_subq_t1 set a=NULL where a=2.5;
+select 1.5 IN (SELECT * from table_subq_t1);
+select 3.5 IN (SELECT * from table_subq_t1);
+select 10.5 IN (SELECT * from table_subq_t1);
+select 1.5 > ALL (SELECT * from table_subq_t1);
+select 10.5 > ALL (SELECT * from table_subq_t1);
+select 1.5 > ANY (SELECT * from table_subq_t1);
+select 10.5 > ANY (SELECT * from table_subq_t1);
+select (select a+1) from table_subq_t1 order by a;
+drop table table_subq_t1;
+
+#
+# Null with keys
+#
+
+CREATE TABLE table_subq_t1 (a int(11) NOT NULL default '0', PRIMARY KEY  (a));
+CREATE TABLE table_subq_t2 (a int(11) default '0', INDEX (a));
+INSERT INTO table_subq_t1 VALUES (1),(2),(3),(4);
+INSERT INTO table_subq_t2 VALUES (1),(2),(3);
+SELECT table_subq_t1.a, table_subq_t1.a in (select table_subq_t2.a from table_subq_t2) FROM table_subq_t1;
+CREATE TABLE table_subq_t3 (a int(11) default '0');
+INSERT INTO table_subq_t3 VALUES (1),(2),(3);
+#SELECT table_subq_t1.a, table_subq_t1.a in (select table_subq_t2.a from table_subq_t2,table_subq_t3 where table_subq_t3.a=table_subq_t2.a) FROM table_subq_t1;
+drop table table_subq_t1,table_subq_t2,table_subq_t3;
+
+#LIMIT is not supported now
+create table table_subq_t1 (a float);
+-- error ER_NOT_SUPPORTED_YET
+select 10.5 IN (SELECT * from table_subq_t1 LIMIT 1);
+-- error ER_WRONG_USAGE
+select 10.5 IN (SELECT * from table_subq_t1 LIMIT 1 UNION SELECT 1.5);
+-- error ER_NOT_SUPPORTED_YET
+select 10.5 IN (SELECT * from table_subq_t1 UNION SELECT 1.5 LIMIT 1);
+drop table table_subq_t1;
+
+create table table_subq_t1 (a int, b int, c varchar(10));
+create table table_subq_t2 (a int);
+insert into table_subq_t1 values (1,2,'a'),(2,3,'b'),(3,4,'c');
+insert into table_subq_t2 values (1),(2),(NULL);
+select a, (select a,b,c from table_subq_t1 where table_subq_t1.a=table_subq_t2.a) = ROW(a,2,'a'),(select c from table_subq_t1 where a=table_subq_t2.a) from table_subq_t2 order by (select c from table_subq_t1
+where a=table_subq_t2.a);
+select a, (select a,b,c from table_subq_t1 where table_subq_t1.a=table_subq_t2.a) = ROW(a,3,'b'),(select c from table_subq_t1 where a=table_subq_t2.a) from table_subq_t2 order by (select c from table_subq_t1 
+where a=table_subq_t2.a);
+select a, (select a,b,c from table_subq_t1 where table_subq_t1.a=table_subq_t2.a) = ROW(a,4,'c'),(select c from table_subq_t1 where a=table_subq_t2.a) from table_subq_t2 order by (select c from table_subq_t1 
+where a=table_subq_t2.a);
+drop table table_subq_t1,table_subq_t2;
+
+create table table_subq_t1 (a int, b real, c varchar(10));
+insert into table_subq_t1 values (1, 1, 'a'), (2,2,'b'), (NULL, 2, 'b');
+select ROW(1, 1, 'a') IN (select a,b,c from table_subq_t1);
+select ROW(1, 2, 'a') IN (select a,b,c from table_subq_t1);
+select ROW(1, 1, 'a') IN (select b,a,c from table_subq_t1);
+select ROW(1, 1, 'a') IN (select a,b,c from table_subq_t1 where a is not null);
+select ROW(1, 2, 'a') IN (select a,b,c from table_subq_t1 where a is not null);
+select ROW(1, 1, 'a') IN (select b,a,c from table_subq_t1 where a is not null);
+select ROW(1, 1, 'a') IN (select a,b,c from table_subq_t1 where c='b' or c='a');
+select ROW(1, 2, 'a') IN (select a,b,c from table_subq_t1 where c='b' or c='a');
+select ROW(1, 1, 'a') IN (select b,a,c from table_subq_t1 where c='b' or c='a');
+-- error ER_NOT_SUPPORTED_YET
+select ROW(1, 1, 'a') IN (select b,a,c from table_subq_t1 limit 2);
+drop table table_subq_t1;
+
+#
+# DO & SET
+#
+create table table_subq_t1 (a int);
+insert into table_subq_t1 values (1);
+do @a:=(SELECT a from table_subq_t1);
+select @a;
+set @a:=2;
+set @a:=(SELECT a from table_subq_t1);
+select @a;
+drop table table_subq_t1;
+-- error ER_NO_SUCH_TABLE
+do (SELECT a from table_subq_t1);
+-- error ER_NO_SUCH_TABLE
+set @a:=(SELECT a from table_subq_t1);
+
+create table table_subq_t1 (a int);
+create table table_subq_t2 (b int);
+insert into table_subq_t1 values (1),(2);
+insert into table_subq_t2 values (1);
+select a from table_subq_t1 where a in (select a from table_subq_t1 where a in (select b from table_subq_t2));
+drop table table_subq_t1, table_subq_t2;
+
+create table table_subq_t1 (a int, b int);
+create table table_subq_t2 like table_subq_t1;
+insert into table_subq_t1 values (1,2),(1,3),(1,4),(1,5);
+insert into table_subq_t2 values (1,2),(1,3);
+select * from table_subq_t1 where row(a,b) in (select a,b from table_subq_t2) order by b;
+drop table table_subq_t1, table_subq_t2;
+
+CREATE TABLE `table_subq_t1` (`i` int(11) NOT NULL default '0',PRIMARY KEY  (`i`)) ENGINE=SequoiaDB CHARSET=latin1;
+INSERT INTO table_subq_t1 VALUES (1);
+UPDATE table_subq_t1 SET i=i+1 WHERE i=(SELECT MAX(i));
+select * from table_subq_t1;
+drop table table_subq_t1;
+
+CREATE TABLE `table_subq_t1` (
+  `mot` varchar(30) character set latin1 NOT NULL default '',
+  `topic` mediumint(8) unsigned NOT NULL default '0',
+  `date` date NOT NULL default '1000-01-01',
+  `pseudo` varchar(35) character set latin1 NOT NULL default '',
+  PRIMARY KEY  (`mot`,`pseudo`,`topic`),
+  KEY `pseudo` (`pseudo`,`topic`),
+  KEY `topic` (`topic`)
+) ;
+
+CREATE TABLE `table_subq_t2` (
+  `mot` varchar(30) character set latin1 NOT NULL default '',
+  `topic` mediumint(8) unsigned NOT NULL default '0',
+  `date` date NOT NULL default '1000-01-01',
+  `pseudo` varchar(35) character set latin1 NOT NULL default '',
+  PRIMARY KEY  (`mot`,`pseudo`,`topic`),
+  KEY `pseudo` (`pseudo`,`topic`),
+  KEY `topic` (`topic`)
+);
+
+CREATE TABLE `table_subq_t3` (
+  `numeropost` mediumint(8) unsigned NOT NULL,
+  `maxnumrep` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`numeropost`),
+  UNIQUE KEY `maxnumrep` (`numeropost`,`maxnumrep`)
+) ;
+INSERT INTO table_subq_t1 VALUES ('joce','1','1000-01-01','joce'),('test','2','2000-01-01','test');
+
+INSERT INTO table_subq_t2 VALUES ('joce','1','3000-01-01','joce'),('test','2','4000-01-01','test');
+
+INSERT INTO table_subq_t3 VALUES (1,1);
+
+SELECT DISTINCT topic FROM table_subq_t2 WHERE NOT EXISTS(SELECT * FROM table_subq_t3 WHERE
+numeropost=topic) ORDER BY topic;
+select * from table_subq_t1 order by topic;
+
+drop table table_subq_t1, table_subq_t2, table_subq_t3;
+
+SELECT * FROM (SELECT 1 as a,(SELECT a)) a;
+CREATE TABLE table_subq_t1 SELECT * FROM (SELECT 1 as a,(SELECT 1)) a;
+SHOW CREATE TABLE table_subq_t1;
+drop table table_subq_t1;
+CREATE TABLE table_subq_t1 SELECT * FROM (SELECT 1 as a,(SELECT a)) a;
+SHOW CREATE TABLE table_subq_t1;
+DROP TABLE table_subq_t1;
+
+CREATE TABLE table_subq_t1 SELECT * FROM (SELECT 1 as a,(SELECT a+0)) a;
+SHOW CREATE TABLE table_subq_t1;
+DROP TABLE table_subq_t1;
+
+CREATE TABLE table_subq_t1 SELECT (SELECT 1 as a UNION SELECT 1+1 limit 1,1) as a;
+select * from table_subq_t1;
+SHOW CREATE TABLE table_subq_t1;
+drop table table_subq_t1;
+
+#
+# complex subquery
+#
+
+CREATE TABLE table_subq_t1 (
+  ID int(11) NOT NULL,
+  name char(35) NOT NULL default '',
+  table_subq_t2 char(3) NOT NULL default '',
+  District char(20) NOT NULL default '',
+  Population int(11) NOT NULL default '0',
+  PRIMARY KEY  (ID)
+);
+
+INSERT INTO table_subq_t1 VALUES (130,'Sydney','AUS','New South Wales',3276207);
+INSERT INTO table_subq_t1 VALUES (131,'Melbourne','AUS','Victoria',2865329);
+INSERT INTO table_subq_t1 VALUES (132,'Brisbane','AUS','Queensland',1291117);
+
+CREATE TABLE table_subq_t2 (
+  Code char(3) NOT NULL default '',
+  Name char(52) NOT NULL default '',
+  Continent enum('Asia','Europe','North America','Africa','Oceania','Antarctica','South America') NOT NULL default 'Asia',
+  Region char(26) NOT NULL default '',
+  SurfaceArea float(10,2) NOT NULL default '0.00',
+  IndepYear smallint(6) default NULL,
+  Population int(11) NOT NULL default '0',
+  LifeExpectancy float(3,1) default NULL,
+  GNP float(10,2) default NULL,
+  GNPOld float(10,2) default NULL,
+  LocalName char(45) NOT NULL default '',
+  GovernmentForm char(45) NOT NULL default '',
+  HeadOfState char(60) default NULL,
+  Capital int(11) default NULL,
+  Code2 char(2) NOT NULL default '',
+  PRIMARY KEY  (Code)
+);
+
+INSERT INTO table_subq_t2 VALUES ('AUS','Australia','Oceania','Australia and New Zealand',7741220.00,1901,18886000,79.8,351182.00,392911.00,'Australia','Constitutional Monarchy, Federation','Elisabeth II',135,'AU');
+INSERT INTO table_subq_t2 VALUES ('AZE','Azerbaijan','Asia','Middle East',86600.00,1991,7734000,62.9,4127.00,4100.00,'Azärbaycan','Federal Republic','Heydär Äliyev',144,'AZ');
+
+select table_subq_t2.Continent, table_subq_t1.Name, table_subq_t1.Population from table_subq_t2 LEFT JOIN table_subq_t1 ON table_subq_t2.Code = table_subq_t1.table_subq_t2  where table_subq_t1.Population IN (select max(table_subq_t1.Population) AS Population from table_subq_t1, table_subq_t2 where table_subq_t1.table_subq_t2 = table_subq_t2.Code group by Continent);
+
+drop table table_subq_t1, table_subq_t2;
+
+
+CREATE TABLE `table_subq_t1` (
+  `i` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`i`)
+);
+
+INSERT INTO table_subq_t1 VALUES (1);
+UPDATE table_subq_t1 SET i=i+(SELECT MAX(i) FROM (SELECT 1) t) WHERE i=(SELECT MAX(i));
+UPDATE table_subq_t1 SET i=i+1 WHERE i=(SELECT MAX(i));
+-- error ER_BAD_FIELD_ERROR
+UPDATE table_subq_t1 SET t.i=i+(SELECT MAX(i) FROM (SELECT 1) t);
+select * from table_subq_t1;
+drop table table_subq_t1;
+
+#
+# Multi update test
+#
+CREATE TABLE table_subq_t1 (
+  id int(11) default NULL
+) ENGINE=SequoiaDB CHARSET=latin1;
+INSERT INTO table_subq_t1 VALUES (1),(1),(2),(2),(1),(3);
+CREATE TABLE table_subq_t2 (
+  id int(11) default NULL,
+  name varchar(15) default NULL
+) ENGINE=SequoiaDB CHARSET=latin1;
+
+INSERT INTO table_subq_t2 VALUES (4,'vita'), (1,'vita'), (2,'vita'), (1,'vita');
+update table_subq_t1, table_subq_t2 set table_subq_t2.name='lenka' where table_subq_t2.id in (select id from table_subq_t1);
+select * from table_subq_t2 order by id;
+drop table table_subq_t1,table_subq_t2;
+
+#
+# uninterruptable update
+#
+create table table_subq_t1 (a int, b int);
+create table table_subq_t2 (a int, b int);
+
+insert into table_subq_t1 values (1,0), (2,0), (3,0);
+insert into table_subq_t2 values (1,1), (2,1), (3,1), (2,2);
+
+update ignore table_subq_t1 set b=(select b from table_subq_t2 where table_subq_t1.a=table_subq_t2.a);
+select * from table_subq_t1 order by a;
+
+drop table table_subq_t1, table_subq_t2;
+
+#
+# alloc_group_fields() working
+#
+create table table_subq_t1 (a int, b int);
+create table table_subq_t2 (a int, b int);
+create table table_subq_t3 (a int, b int);
+insert into table_subq_t1 values (0,100),(1,2), (1,3), (2,2), (2,7), (2,-1), (3,10);
+insert into table_subq_t2 values (0,0), (1,1), (2,1), (3,1), (4,1);
+insert into table_subq_t3 values (3,3), (2,2), (1,1);
+select a,(select count(distinct table_subq_t1.b) as sum from table_subq_t1,table_subq_t2 where table_subq_t1.a=table_subq_t2.a and table_subq_t2.b > 0 and table_subq_t1.a <= table_subq_t3.b group by table_subq_t1.a order by sum limit 1) from table_subq_t3;
+drop table table_subq_t1,table_subq_t2,table_subq_t3;
+
+#
+# update subquery with wrong field (to force name resolving
+# in UPDATE name space)
+#
+create table table_subq_t1 (s1 int);
+create table table_subq_t2 (s1 int);
+insert into table_subq_t1 values (1);
+insert into table_subq_t2 values (1);
+-- error ER_BAD_FIELD_ERROR
+update table_subq_t1 set  s1 = s1 + 1 where 1 = (select x.s1 as A from table_subq_t2 WHERE table_subq_t2.s1 > table_subq_t1.s1 order by A);
+DROP TABLE table_subq_t1, table_subq_t2;
+
+#
+# collation test
+#
+CREATE TABLE table_subq_t1 (s1 CHAR(5) COLLATE latin1_german1_ci,
+                 s2 CHAR(5) COLLATE latin1_swedish_ci);
+INSERT INTO table_subq_t1 VALUES ('z','?');
+-- error ER_CANT_AGGREGATE_2COLLATIONS
+select * from table_subq_t1 where s1 > (select max(s2) from table_subq_t1);
+-- error ER_CANT_AGGREGATE_2COLLATIONS
+select * from table_subq_t1 where s1 > any (select max(s2) from table_subq_t1);
+drop table table_subq_t1;
+
+#
+# aggregate functions reinitialization
+#
+create table table_subq_t1(toid int,rd int);
+create table table_subq_t2(userid int,pmnew int,pmtotal int);
+insert into table_subq_t2 values(1,0,0),(2,0,0);
+insert into table_subq_t1 values(1,0),(1,0),(1,0),(1,12),(1,15),(1,123),(1,12312),(1,12312),(1,123),(2,0),(2,0),(2,1),(2,2);
+select userid,pmtotal,pmnew, (select count(rd) from table_subq_t1 where toid=table_subq_t2.userid) calc_total, (select count(rd) from table_subq_t1 where rd=0 and toid=table_subq_t2.userid) calc_new from table_subq_t2 where userid in (select distinct toid from table_subq_t1) order by userid;
+drop table table_subq_t1, table_subq_t2;
+
+#
+# row union
+#
+create table table_subq_t1 (s1 char(5));
+-- error ER_OPERAND_COLUMNS
+select (select 'a','b' from table_subq_t1 union select 'a','b' from table_subq_t1) from table_subq_t1;
+insert into table_subq_t1 values ('tttt');
+select * from table_subq_t1 where ('a','b')=(select 'a','b' from table_subq_t1 union select 'a','b' from table_subq_t1);
+(select * from table_subq_t1);
+drop table table_subq_t1;
+
+#
+# IN optimisation test results
+#
+create table table_subq_t1 (s1 char(5), index s1(s1));
+create table table_subq_t2 (s1 char(5), index s1(s1));
+insert into table_subq_t1 values ('a1'),('a2'),('a3');
+insert into table_subq_t2 values ('a1'),('a2');
+select s1, s1 NOT IN (SELECT s1 FROM table_subq_t2) from table_subq_t1 order by s1;
+select s1, s1 = ANY (SELECT s1 FROM table_subq_t2) from table_subq_t1 order by s1;
+select s1, s1 <> ALL (SELECT s1 FROM table_subq_t2) from table_subq_t1 order by s1;
+select s1, s1 NOT IN (SELECT s1 FROM table_subq_t2 WHERE s1 < 'a2') from table_subq_t1 order by s1;
+drop table table_subq_t1,table_subq_t2;
+
+#
+# correct ALL optimisation
+#
+create table table_subq_t2 (a int, b int);
+create table table_subq_t3 (a int);
+insert into table_subq_t3 values (6),(7),(3);
+select * from table_subq_t3 where a >= all (select b from table_subq_t2) order by a;
+select * from table_subq_t3 where a >= some (select b from table_subq_t2);
+select * from table_subq_t3 where a >= all (select b from table_subq_t2 group by 1);
+select * from table_subq_t3 where a >= some (select b from table_subq_t2 group by 1);
+select * from table_subq_t3 where NULL >= any (select b from table_subq_t2);
+select * from table_subq_t3 where NULL >= any (select b from table_subq_t2 group by 1);
+select * from table_subq_t3 where NULL >= some (select b from table_subq_t2);
+select * from table_subq_t3 where NULL >= some (select b from table_subq_t2 group by 1);
+#
+# optimized static ALL/ANY with grouping
+#
+insert into table_subq_t2 values (2,2), (2,1), (3,3), (3,1);
+select * from table_subq_t3 where a > all (select max(b) from table_subq_t2 group by a) order by a;
+drop table table_subq_t2, table_subq_t3;
+
+#
+# cardinality check
+#
+CREATE TABLE table_subq_t1 (id int(11) default NULL);
+INSERT INTO table_subq_t1 VALUES (1),(5);
+CREATE TABLE table_subq_t2 (id int(11) default NULL);
+INSERT INTO table_subq_t2 VALUES (2),(6);
+-- error ER_OPERAND_COLUMNS
+select * from table_subq_t1 where (1,2,6) in (select * from table_subq_t2);
+DROP TABLE table_subq_t1,table_subq_t2;
+
+#
+# DO and SET with errors
+#
+create table table_subq_t1 (s1 int);
+insert into table_subq_t1 values (1);
+insert into table_subq_t1 values (2);
+-- error ER_SUBQUERY_NO_1_ROW
+set sort_buffer_size = (select s1 from table_subq_t1);
+-- error ER_SUBQUERY_NO_1_ROW
+do (select * from table_subq_t1);
+drop table table_subq_t1;
+
+#
+# optimized ALL/ANY with union
+#
+create table table_subq_t1 (s1 char);
+insert into table_subq_t1 values ('e');
+select * from table_subq_t1 where 'f' > any (select s1 from table_subq_t1);
+select * from table_subq_t1 where 'f' > any (select s1 from table_subq_t1 union select s1 from table_subq_t1);
+drop table table_subq_t1;
+
+#
+# filesort in subquery (restoring join_tab)
+#
+CREATE TABLE table_subq_t1 (number char(11) NOT NULL default '') ENGINE=SequoiaDB CHARSET=latin1;
+INSERT INTO table_subq_t1 VALUES ('69294728265'),('18621828126'),('89356874041'),('95895001874');
+CREATE TABLE table_subq_t2 (code char(5) NOT NULL default '',UNIQUE KEY code (code)) ENGINE=SequoiaDB CHARSET=latin1;
+INSERT INTO table_subq_t2 VALUES ('1'),('1226'),('1245'),('1862'),('18623'),('1874'),('1967'),('6');
+select c.number as phone,(select p.code from table_subq_t2 p where c.number like concat(p.code, '%') order by length(p.code) desc limit 1) as code from table_subq_t1 c;
+drop table table_subq_t1, table_subq_t2;
+
+#
+# unresolved field error
+#
+create table table_subq_t1 (s1 int);
+create table table_subq_t2 (s1 int);
+-- error ER_BAD_FIELD_ERROR
+select * from table_subq_t1 where (select count(*) from table_subq_t2 where table_subq_t1.s2) = 1;
+-- error ER_BAD_FIELD_ERROR
+select * from table_subq_t1 where (select count(*) from table_subq_t2 group by table_subq_t1.s2) = 1;
+-- error ER_BAD_FIELD_ERROR
+select count(*) from table_subq_t2 group by table_subq_t1.s2;
+drop table table_subq_t1, table_subq_t2;
+
+#
+# fix_fields() in add_ref_to_table_cond()
+#
+CREATE TABLE table_subq_t1(COLA FLOAT NOT NULL,COLB FLOAT NOT NULL,COLC VARCHAR(20) DEFAULT NULL,PRIMARY KEY (COLA, COLB));
+CREATE TABLE table_subq_t2(COLA FLOAT NOT NULL,COLB FLOAT NOT NULL,COLC CHAR(1) NOT NULL,PRIMARY KEY (COLA));
+INSERT INTO table_subq_t1 VALUES (1,1,'1A3240'), (1,2,'4W2365');
+INSERT INTO table_subq_t2 VALUES (100, 200, 'C');
+SELECT DISTINCT COLC FROM table_subq_t1 WHERE COLA = (SELECT COLA FROM table_subq_t2 WHERE COLB = 200 AND COLC ='C' LIMIT 1);
+DROP TABLE table_subq_t1, table_subq_t2;
+
+CREATE TABLE table_subq_t1 (a int(1));
+INSERT INTO table_subq_t1 VALUES (1),(1),(1),(1),(1),(2),(3),(4),(5);
+SELECT DISTINCT (SELECT a) FROM table_subq_t1 LIMIT 100;
+DROP TABLE table_subq_t1;
+
+#
+# Bug#2479 dependant subquery with limit crash
+#
+
+CREATE TABLE `table_subq_t1` (
+  `id` int(11) NOT NULL,
+  `id_cns` tinyint(3) unsigned NOT NULL default '0',
+  `tipo` enum('','UNO','DUE') NOT NULL default '',
+  `anno_dep` smallint(4) unsigned zerofill NOT NULL default '0000',
+  `particolare` mediumint(8) unsigned NOT NULL default '0',
+  `generale` mediumint(8) unsigned NOT NULL default '0',
+  `bis` tinyint(3) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `idx_cns_gen_anno` (`id`,`anno_dep`,`id_cns`,`generale`,`particolare`),
+  UNIQUE KEY `idx_cns_par_anno` (`id`,`id_cns`,`anno_dep`,`tipo`,`particolare`,`bis`)
+);
+INSERT INTO `table_subq_t1` VALUES (1,16,'UNO',1987,2048,9681,0),(2,50,'UNO',1987,1536,13987,0),(3,16,'UNO',1987,2432,14594,0),(4,16,'UNO',1987,1792,13422,0),(5,16,'UNO',1987,1025,10240,0),(6,16,'UNO',1987,1026,7089,0);
+CREATE TABLE `table_subq_t2` (
+  `id` tinyint(3) unsigned NOT NULL,
+  `max_anno_dep` smallint(6) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`id`)
+);
+INSERT INTO `table_subq_t2` VALUES (16,1987),(50,1990),(51,1990);
+DROP TABLE table_subq_t1, table_subq_t2;
+
+#
+# GLOBAL LIMIT
+#
+create table table_subq_t1 (a int);
+insert into table_subq_t1 values (1), (2), (3);
+SET SQL_SELECT_LIMIT=1;
+select sum(a) from (select * from table_subq_t1) as a;
+select 2 in (select * from table_subq_t1);
+SET SQL_SELECT_LIMIT=default;
+drop table table_subq_t1;
+
+
+#
+# Bug#3118 subselect + order by
+#
+
+CREATE TABLE table_subq_t1 (a int, b int, INDEX (a));
+INSERT INTO table_subq_t1 VALUES (1, 1), (1, 2), (1, 3);
+SELECT * FROM table_subq_t1 WHERE a = (SELECT MAX(a) FROM table_subq_t1 WHERE a = 1) ORDER BY b;
+DROP TABLE table_subq_t1;
+
+# Item_cond fix field
+#
+create table table_subq_t1(val varchar(10));
+insert into table_subq_t1 values ('aaa'), ('bbb'),('eee'),('mmm'),('ppp');
+select count(*) from table_subq_t1 as w1 where w1.val in (select w2.val from table_subq_t1 as w2 where w2.val like 'm%') and w1.val in (select w3.val from table_subq_t1 as w3 where w3.val like 'e%');
+drop table table_subq_t1;
+
+#
+# ref_or_null replacing with ref
+#
+create table table_subq_t1 (id int not null, text varchar(20) not null default '', primary key (id));
+insert into table_subq_t1 (id, text) values (1, 'textable_subq_t1'), (2, 'textable_subq_t2'), (3, 'textable_subq_t3'), (4, 'textable_subq_t4'), (5, 'textable_subq_t5'), (6, 'textable_subq_t6'), (7, 'textable_subq_t7'), (8, 'textable_subq_t8'), (9, 'textable_subq_t9'), (10, 'textable_subq_t10'), (11, 'textable_subq_t11'), (12, 'textable_subq_t12');
+select * from table_subq_t1 where id not in (select id from table_subq_t1 where id < 8);
+select * from table_subq_t1 as tt where not exists (select id from table_subq_t1 where id < 8 and (id = tt.id or id is null) having id is not null);
+insert into table_subq_t1 (id, text) values (1000, 'textable_subq_t1000'), (1001, 'textable_subq_t1001');
+create table table_subq_t2 (id int not null, text varchar(20) not null default '', primary key (id));
+insert into table_subq_t2 (id, text) values (1, 'textable_subq_t1'), (2, 'textable_subq_t2'), (3, 'textable_subq_t3'), (4, 'textable_subq_t4'), (5, 'textable_subq_t5'), (6, 'textable_subq_t6'), (7, 'textable_subq_t7'), (8, 'textable_subq_t8'), (9, 'textable_subq_t9'), (10, 'textable_subq_t10'), (11, 'textable_subq_t1'), (12, 'textable_subq_t2'), (13, 'textable_subq_t3'), (14, 'textable_subq_t4'), (15, 'textable_subq_t5'), (16, 'textable_subq_t6'), (17, 'textable_subq_t7'), (18, 'textable_subq_t8'), (19, 'textable_subq_t9'), (20, 'textable_subq_t10'),(21, 'textable_subq_t1'), (22, 'textable_subq_t2'), (23, 'textable_subq_t3'), (24, 'textable_subq_t4'), (25, 'textable_subq_t5'), (26, 'textable_subq_t6'), (27, 'textable_subq_t7'), (28, 'textable_subq_t8'), (29, 'textable_subq_t9'), (30, 'textable_subq_t10'), (31, 'textable_subq_t1'), (32, 'textable_subq_t2'), (33, 'textable_subq_t3'), (34, 'textable_subq_t4'), (35, 'textable_subq_t5'), (36, 'textable_subq_t6'), (37, 'textable_subq_t7'), (38, 'textable_subq_t8'), (39, 'textable_subq_t9'), (40, 'textable_subq_t10'), (41, 'textable_subq_t1'), (42, 'textable_subq_t2'), (43, 'textable_subq_t3'), (44, 'textable_subq_t4'), (45, 'textable_subq_t5'), (46, 'textable_subq_t6'), (47, 'textable_subq_t7'), (48, 'textable_subq_t8'), (49, 'textable_subq_t9'), (50, 'textable_subq_t10');
+select * from table_subq_t1 a left join table_subq_t2 b on (a.id=b.id or b.id is null) join table_subq_t1 c on (if(isnull(b.id), 1000, b.id)=c.id) order by a.id;
+drop table table_subq_t1,table_subq_t2;
+
+#
+# Bug#3188 Ambiguous Column in Subselect crashes server
+#
+create table table_subq_t1(id int);
+create table table_subq_t2(id int);
+create table table_subq_t3(flag int);
+-- error ER_PARSE_ERROR
+select (select * from table_subq_t3 where id not null) from table_subq_t1, table_subq_t2;
+drop table table_subq_t1,table_subq_t2,table_subq_t3;
+
+#
+# aggregate functions (Bug#3505 Wrong results on use of ORDER BY with subqueries)
+#
+CREATE TABLE table_subq_t1 (id INT);
+CREATE TABLE table_subq_t2 (id INT);
+INSERT INTO table_subq_t1 VALUES (1), (2);
+INSERT INTO table_subq_t2 VALUES (1);
+SELECT table_subq_t1.id, ( SELECT COUNT(t.id) FROM table_subq_t2 AS t WHERE t.id = table_subq_t1.id ) AS c FROM table_subq_t1 LEFT JOIN table_subq_t2 USING (id) ORDER BY table_subq_t1.id;
+SELECT id, ( SELECT COUNT(t.id) FROM table_subq_t2 AS t WHERE t.id = table_subq_t1.id ) AS c FROM table_subq_t1 LEFT JOIN table_subq_t2 USING (id) ORDER BY id;
+SELECT table_subq_t1.id, ( SELECT COUNT(t.id) FROM table_subq_t2 AS t WHERE t.id = table_subq_t1.id ) AS c FROM table_subq_t1 LEFT JOIN table_subq_t2 USING (id) ORDER BY table_subq_t1.id;
+SELECT id, ( SELECT COUNT(t.id) FROM table_subq_t2 AS t WHERE t.id = table_subq_t1.id ) AS c FROM table_subq_t1 LEFT JOIN table_subq_t2 USING (id) ORDER BY id;
+DROP TABLE table_subq_t1,table_subq_t2;
+
+#
+# ALL/ANY test
+#
+CREATE TABLE table_subq_t1 ( a int, b int );
+INSERT INTO table_subq_t1 VALUES (1,1),(2,2),(3,3);
+SELECT a FROM table_subq_t1 WHERE a > ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a > ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+# with index
+ALTER TABLE table_subq_t1 ADD INDEX (a);
+SELECT a FROM table_subq_t1 WHERE a > ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ANY ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a > ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ALL ( SELECT a FROM table_subq_t1 WHERE b = 2 ) ORDER BY a;
+# having clause test
+SELECT a FROM table_subq_t1 WHERE a > ANY (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ANY (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ANY (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ANY (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ANY (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ANY (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a > ALL (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ALL (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ALL (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ALL (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ALL (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ALL (SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+# union test
+SELECT a FROM table_subq_t1 WHERE a > ANY (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ANY (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ANY (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ANY (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ANY (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ANY (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a > ALL (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ALL (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ALL (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ALL (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ALL (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ALL (SELECT a FROM table_subq_t1 WHERE b = 2 UNION SELECT a FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+# union + having test
+SELECT a FROM table_subq_t1 WHERE a > ANY (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ANY (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ANY (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ANY (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ANY (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ANY (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a > ALL (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ALL (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ALL (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ALL (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ALL (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ALL (SELECT a FROM table_subq_t1 HAVING a = 2 UNION SELECT a FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+# row tests
+# < > >= <= and = ALL/ <> ANY do not support row operation
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE (1,2) > ANY (SELECT a FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE a > ANY (SELECT a,2 FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE (1,2) > ANY (SELECT a,2 FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE (1,2) > ALL (SELECT a FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE a > ALL (SELECT a,2 FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE (1,2) > ALL (SELECT a,2 FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE (1,2) = ALL (SELECT a,2 FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE (1,2) <> ANY (SELECT a,2 FROM table_subq_t1 WHERE b = 2);
+# following should be converted to IN
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE (1,2) = ANY (SELECT a FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE a = ANY (SELECT a,2 FROM table_subq_t1 WHERE b = 2);
+SELECT a FROM table_subq_t1 WHERE (1,2) = ANY (SELECT a,2 FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE (1,2) <> ALL (SELECT a FROM table_subq_t1 WHERE b = 2);
+-- error ER_OPERAND_COLUMNS
+SELECT a FROM table_subq_t1 WHERE a <> ALL (SELECT a,2 FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE (1,2) <> ALL (SELECT a,2 FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE (a,1) = ANY (SELECT a,1 FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE (a,1) <> ALL (SELECT a,1 FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE (a,1) = ANY (SELECT a,1 FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE (a,1) <> ALL (SELECT a,1 FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE (a,1) = ANY (SELECT a,1 FROM table_subq_t1 WHERE b = 2 UNION SELECT a,1 FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE (a,1) <> ALL (SELECT a,1 FROM table_subq_t1 WHERE b = 2 UNION SELECT a,1 FROM table_subq_t1 WHERE b = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE (a,1) = ANY (SELECT a,1 FROM table_subq_t1 HAVING a = 2 UNION SELECT a,1 FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE (a,1) <> ALL (SELECT a,1 FROM table_subq_t1 HAVING a = 2 UNION SELECT a,1 FROM table_subq_t1 HAVING a = 2) ORDER BY a;
+# without optimisation
+SELECT a FROM table_subq_t1 WHERE a > ANY (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ANY (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ANY (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ANY (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ANY (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ANY (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a > ALL (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ALL (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ALL (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ALL (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ALL (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ALL (SELECT a FROM table_subq_t1 WHERE b = 2 group by a) ORDER BY a;
+# without optimisation + having
+SELECT a FROM table_subq_t1 WHERE a > ANY (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ANY (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ANY (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ANY (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ANY (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ANY (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a > ALL (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ALL (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ALL (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ALL (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ALL (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ALL (SELECT a FROM table_subq_t1 group by a HAVING a = 2) ORDER BY a;
+# EXISTS in string contence
+SELECT concat(EXISTS(SELECT a FROM table_subq_t1 WHERE b = 2 and a.a > table_subq_t1.a), '-') from table_subq_t1 a;
+SELECT concat(EXISTS(SELECT a FROM table_subq_t1 WHERE b = 2 and a.a < table_subq_t1.a), '-') from table_subq_t1 a;
+SELECT concat(EXISTS(SELECT a FROM table_subq_t1 WHERE b = 2 and a.a = table_subq_t1.a), '-') from table_subq_t1 a;
+DROP TABLE table_subq_t1;
+CREATE TABLE table_subq_t1 ( a double, b double );
+INSERT INTO table_subq_t1 VALUES (1,1),(2,2),(3,3);
+SELECT a FROM table_subq_t1 WHERE a > ANY (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ANY (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ANY (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ANY (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ANY (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ANY (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a > ALL (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ALL (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ALL (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ALL (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ALL (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ALL (SELECT a FROM table_subq_t1 WHERE b = 2e0) ORDER BY a;
+DROP TABLE table_subq_t1;
+CREATE TABLE table_subq_t1 ( a char(1), b char(1));
+INSERT INTO table_subq_t1 VALUES ('1','1'),('2','2'),('3','3');
+SELECT a FROM table_subq_t1 WHERE a > ANY (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ANY (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ANY (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ANY (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ANY (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ANY (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a > ALL (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a < ALL (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a = ALL (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a >= ALL (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <= ALL (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+SELECT a FROM table_subq_t1 WHERE a <> ALL (SELECT a FROM table_subq_t1 WHERE b = '2') ORDER BY a;
+DROP TABLE table_subq_t1;
+
+
+#
+# SELECT(EXISTS * ...)optimisation
+#
+#create table table_subq_t1 (a int, b int);
+#insert into table_subq_t1 values (1,2),(3,4);
+#select * from table_subq_t1 up where exists (select * from table_subq_t1 where table_subq_t1.a=up.a);
+#explain extended select * from table_subq_t1 up where exists (select * from table_subq_t1 where table_subq_t1.a=up.a);
+#drop table table_subq_t1;
+
+
+#
+# Bug#4102 subselect in HAVING
+#
+
+CREATE TABLE table_subq_t1 (table_subq_t1_a int);
+INSERT INTO table_subq_t1 VALUES (1);
+CREATE TABLE table_subq_t2 (table_subq_t2_a int, table_subq_t2_b int, PRIMARY KEY (table_subq_t2_a, table_subq_t2_b));
+INSERT INTO table_subq_t2 VALUES (1, 1), (1, 2);
+SELECT * FROM table_subq_t1, table_subq_t2 table2 WHERE table_subq_t1_a = 1 AND table2.table_subq_t2_a = 1
+  HAVING table2.table_subq_t2_b = (SELECT MAX(table_subq_t2_b) FROM table_subq_t2 WHERE table_subq_t2_a = table2.table_subq_t2_a);
+DROP TABLE table_subq_t1, table_subq_t2;
+
+--source suite/sequoiadb_query/include/uninstall_sequoiadb.inc

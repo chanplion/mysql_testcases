@@ -1,0 +1,54 @@
+drop table if exists table_andornot_t1;
+CREATE TABLE table_andornot_t1 (
+ID1_with_null int NULL,
+ID2_with_null int NULL,
+ID_better int NOT NULL,
+INDEX idx1 (ID1_with_null, ID2_with_null),
+INDEX idx2 (ID_better)
+);
+INSERT INTO table_andornot_t1 VALUES (1,1,1), (2,2,1), (3,null,3), (null,3,3), (null,null,3),
+(3,null,3), (null,3,3), (null,null,3), (3,null,3), (null,3,3), (null,null,3);
+SELECT * FROM table_andornot_t1 WHERE ID_better=1 AND ID1_with_null IS NULL ORDER BY ID_better;
+ID1_with_null	ID2_with_null	ID_better
+SELECT * FROM table_andornot_t1 WHERE ID2_with_null=1 OR ID2_with_null=2 ORDER BY ID_better;
+ID1_with_null	ID2_with_null	ID_better
+1	1	1
+2	2	1
+SELECT * FROM table_andornot_t1 WHERE ID_better=1 AND ID1_with_null IS NULL OR ID2_with_null IS NULL ORDER BY ID_better;
+ID1_with_null	ID2_with_null	ID_better
+3	NULL	3
+NULL	NULL	3
+3	NULL	3
+NULL	NULL	3
+3	NULL	3
+NULL	NULL	3
+SELECT * FROM table_andornot_t1 WHERE NOT ID_better = 1 ORDER BY ID_better;
+ID1_with_null	ID2_with_null	ID_better
+3	NULL	3
+NULL	3	3
+NULL	NULL	3
+3	NULL	3
+NULL	3	3
+NULL	NULL	3
+3	NULL	3
+NULL	3	3
+NULL	NULL	3
+SELECT * FROM table_andornot_t1 WHERE NOT ID_better = 1 AND ID1_with_null IS NOT NULL ORDER BY ID_better;
+ID1_with_null	ID2_with_null	ID_better
+3	NULL	3
+3	NULL	3
+3	NULL	3
+SELECT * FROM table_andornot_t1 WHERE NOT ID_better = 1 OR ID1_with_null IS NOT NULL ORDER BY ID_better;
+ID1_with_null	ID2_with_null	ID_better
+1	1	1
+2	2	1
+3	NULL	3
+NULL	3	3
+NULL	NULL	3
+3	NULL	3
+NULL	3	3
+NULL	NULL	3
+3	NULL	3
+NULL	3	3
+NULL	NULL	3
+DROP TABLE table_andornot_t1;

@@ -1,0 +1,38 @@
+
+#
+# test index of double
+#
+--source suite/sequoiadb_datatype/include/have_sequoiadb.inc
+
+--disable_warnings
+drop table if exists table_idx_double_t1;
+--enable_warnings
+SET SQL_WARNINGS=1;
+
+# create table and insert
+create table table_idx_double_t1 (a double);
+# create index
+create index a on table_idx_double_t1 (a);
+# insert
+insert into table_idx_double_t1 values (-1.7976931348623157E+308);
+insert into table_idx_double_t1 values (1.7976931348623157E+308);
+insert into table_idx_double_t1 values (0.0);
+insert into table_idx_double_t1 values (1.789e+300);
+insert into table_idx_double_t1 values (1.807e+307);
+insert into table_idx_double_t1 values (9.22337203685479e18);
+insert into table_idx_double_t1 values ();
+# select
+select * from table_idx_double_t1 order by a;
+select a from table_idx_double_t1 where a = 0;
+select a from table_idx_double_t1 where a >= 0 order by a;
+select a from table_idx_double_t1 where a <= 0 order by a;
+select * from table_idx_double_t1 where a between 0 and 1.7907e+307 order by a;
+select * from table_idx_double_t1 where a is null;
+select * from table_idx_double_t1 where a != 0  order by a;
+select * from table_idx_double_t1 where a <> 0 order by a;
+select * from table_idx_double_t1 where a > -1.179769313486232e+307 order by a limit 2;
+select * from table_idx_double_t1 where a < 1.179769313486232e+307 order by a limit 3 offset 3;
+drop table table_idx_double_t1;
+
+--source suite/sequoiadb_datatype/include/uninstall_sequoiadb.inc
+# End of 4.1 tests

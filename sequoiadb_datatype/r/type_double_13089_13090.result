@@ -1,0 +1,168 @@
+drop table if exists table_double_t1,table_double_t2;
+create table table_double_t1 (datum double);
+insert into table_double_t1 values (0.5),(1.0),(1.5),(2.0),(2.5);
+select * from table_double_t1 order by datum;
+datum
+0.5
+1
+1.5
+2
+2.5
+select * from table_double_t1 where datum < 1.5 order by datum;
+datum
+0.5
+1
+select * from table_double_t1 where datum > 1.5 order by datum;
+datum
+2
+2.5
+select * from table_double_t1 where datum = 1.5 order by datum;
+datum
+1.5
+drop table table_double_t1;
+create table table_double_t1 (d double, d3 double(10,3));
+show full columns from table_double_t1;
+Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
+d	double	NULL	YES		NULL		#	
+d3	double(10,3)	NULL	YES		NULL		#	
+drop table table_double_t1;
+create table table_double_t1 (b double(200,100));
+ERROR 42000: Too big scale 100 specified for column 'b'. Maximum is 30.
+create table table_double_t1 (d double(10,1));
+create table table_double_t2 (d double(10,9));
+insert into table_double_t1 values ("100000000.0");
+insert into table_double_t2 values ("1.23456780");
+create table table_double_t3 select * from table_double_t2 union select * from table_double_t1;
+select * from table_double_t3 order by d;
+d
+1.2345678
+100000000
+show create table table_double_t3;
+Table	Create Table
+table_double_t3	CREATE TABLE `table_double_t3` (
+  `d` double DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+drop table table_double_t1, table_double_t2, table_double_t3;
+create table table_double_t1(a int, b double(8, 2));
+insert into table_double_t1 values
+(1, 28.50), (1, 121.85), (1, 157.23), (1, 1351.00), (1, -1965.35), (1, 81.75),
+(1, 217.08), (1, 7.94), (4, 96.07), (4, 6404.65), (4, -6500.72), (2, 100.00),
+(5, 5.00), (5, -2104.80), (5, 2033.80), (5, 0.07), (5, 65.93),
+(3, -4986.24), (3, 5.00), (3, 4857.34), (3, 123.74), (3,  0.16),
+(6, -1695.31), (6, 1003.77), (6, 499.72), (6, 191.82);
+explain select sum(b) s from table_double_t1 group by a;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_double_t1	NULL	ALL	NULL	NULL	NULL	NULL	26	100.00	Using temporary; Using filesort
+Warnings:
+Note	1003	/* select#1 */ select sum(`test`.`table_double_t1`.`b`) AS `s` from `test`.`table_double_t1` group by `test`.`table_double_t1`.`a`
+select sum(b) s from table_double_t1 group by a order by a;
+s
+0.00
+100.00
+0.00
+-0.00
+-0.00
+0.00
+select sum(b) s from table_double_t1 group by a having s <> 0 order by a;
+s
+100.00
+select sum(b) s from table_double_t1 group by a having s <> 0 order by s;
+s
+100.00
+select sum(b) s from table_double_t1 group by a having s <=> 0 order by a;
+s
+0.00
+0.00
+-0.00
+-0.00
+0.00
+select sum(b) s from table_double_t1 group by a having s <=> 0 order by s;
+s
+-0.00
+-0.00
+0.00
+0.00
+0.00
+alter table table_double_t1 add key (a, b);
+explain select sum(b) s from table_double_t1 group by a;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_double_t1	NULL	ALL	NULL	NULL	NULL	NULL	26	100.00	Using temporary; Using filesort
+Warnings:
+Note	1003	/* select#1 */ select sum(`test`.`table_double_t1`.`b`) AS `s` from `test`.`table_double_t1` group by `test`.`table_double_t1`.`a`
+select sum(b) s from table_double_t1 group by a order by a;
+s
+0.00
+100.00
+0.00
+-0.00
+-0.00
+0.00
+select sum(b) s from table_double_t1 group by a having s <> 0 order by a;
+s
+100.00
+select sum(b) s from table_double_t1 group by a having s <> 0 order by s;
+s
+100.00
+select sum(b) s from table_double_t1 group by a having s <=> 0 order by a;
+s
+0.00
+0.00
+-0.00
+-0.00
+0.00
+select sum(b) s from table_double_t1 group by a having s <=> 0 order by s;
+s
+-0.00
+-0.00
+0.00
+0.00
+0.00
+drop table table_double_t1;
+create table table_double_t1 (
+f1 real zerofill,
+f2 double zerofill
+);
+insert into table_double_t1 values (0.314152e+1, 0.314152e+1);
+drop table table_double_t1;
+create table table_double_t1 (f1 double(200, 0));
+insert into table_double_t1 values (1e199), (-1e199);
+insert into table_double_t1 values (1e200), (-1e200);
+select f1 + 0e0 from table_double_t1 order by f1;
+f1 + 0e0
+-1e200
+-1e199
+1e199
+1e200
+drop table table_double_t1;
+create table table_double_t1(a double, b double unsigned);
+insert into table_double_t1 values (-1.7976931348623157E+308, 0);
+insert into table_double_t1 values (1.7976931348623157E+308, 1.17976931348623157e+308);
+insert into table_double_t1 values (0.0, 0.0);
+insert into table_double_t1 values (9.22337203685479e18, 9.22337203685479e18);
+insert into table_double_t1 values (-1.79769313486232e+308,0);
+ERROR 22007: Illegal double '1.79769313486232e+308' value found during parsing
+insert into table_double_t1 values (1.79769313486232e+308,0);
+ERROR 22007: Illegal double '1.79769313486232e+308' value found during parsing
+insert into table_double_t1 values (0,-1);
+ERROR 22003: Out of range value for column 'b' at row 1
+insert into table_double_t1 values (0, 1.179769313486232e+309);
+ERROR 22007: Illegal double '1.179769313486232e+309' value found during parsing
+select * from table_double_t1 order by a;
+a	b
+-1.7976931348623157e308	0
+0	0
+9.22337203685479e18	9.22337203685479e18
+1.7976931348623157e308	1.1797693134862316e308
+update table_double_t1 set a = -123.456 where a <= 0 and b >= 0;
+select * from table_double_t1 order by a;
+a	b
+-123.456	0
+-123.456	0
+9.22337203685479e18	9.22337203685479e18
+1.7976931348623157e308	1.1797693134862316e308
+delete from table_double_t1 where b > 0;
+select * from table_double_t1 order by a;
+a	b
+-123.456	0
+-123.456	0
+drop table table_double_t1;

@@ -1,0 +1,132 @@
+drop table if exists table_where_t1;
+CREATE TABLE table_where_t1 (
+id int not null,
+fld1 int(6) unsigned DEFAULT 0 NOT NULL,
+companynr tinyint(2) unsigned DEFAULT 0 NOT NULL,
+fld3 char(30) DEFAULT '' NOT NULL,
+fld4 char(35) DEFAULT '' NOT NULL,
+fld5 char(35) DEFAULT '' NOT NULL,
+fld6 char(4) DEFAULT '' NOT NULL,
+KEY fld3 (fld3),
+PRIMARY KEY (id)
+);
+select fld3 from table_where_t1 where fld3 = 'bewilderingly';
+fld3
+breaking
+select fld3 from table_where_t1 where fld3 >= 'breaking' order by id;
+fld3
+intercepted
+sumac
+flanking
+combed
+subjective
+scatterbrain
+dubbed
+overlay
+perturb
+goblins
+select fld3 from table_where_t1 where fld3 <= 'Kane' order by fld3;
+fld3
+Eulerian
+Kane
+select * from table_where_t1 where id between 1 and 10;
+id	fld1	companynr	fld3	fld4	fld5	fld6
+1	1	0	Omaha	teethe	neat	
+2	11401	37	breaking	dreaded	Steinberg	W
+3	11402	37	Romans	scholastics	jarring	
+4	11403	37	intercepted	audiology	tinily	
+5	11501	37	bewilderingly	wallet	balled	
+6	11701	37	astound	parters	persist	W
+7	11702	37	admonishing	eschew	attainments	
+8	11703	37	sumac	quitter	fanatic	
+9	12001	37	flanking	neat	measures	FAS
+10	12003	37	combed	Steinberg	rightfulness	
+select * from table_where_t1 where fld3 is null;
+id	fld1	companynr	fld3	fld4	fld5	fld6
+select * from table_where_t1 where fld3 != 'a' order by id;
+id	fld1	companynr	fld3	fld4	fld5	fld6
+2	11401	37	breaking	dreaded	Steinberg	W
+4	11403	37	intercepted	audiology	tinily	
+5	11501	37	bewilderingly	wallet	balled	
+6	11701	37	astound	parters	persist	W
+7	11702	37	admonishing	eschew	attainments	
+8	11703	37	sumac	quitter	fanatic	
+9	12001	37	flanking	neat	measures	FAS
+10	12003	37	combed	Steinberg	rightfulness	
+11	12004	37	subjective	jarring	capably	
+12	12005	37	scatterbrain	tinily	impulsive	
+14	12302	36	dubbed	persist	terminators	
+16	12304	37	overlay	overlay	announces	FAS
+17	12305	37	perturb	measures	featherweight	FAS
+18	12306	37	goblins	rightfulness	pessimist	FAS
+19	12501	37	annihilates	capably	daughter	
+select * from table_where_t1 where fld3 <> 'Wotan' order by fld3;
+id	fld1	companynr	fld3	fld4	fld5	fld6
+13	12301	37	Eulerian	balled	starlet	
+15	12303	37	Kane	attainments	untying	
+1	1	0	Omaha	teethe	neat	
+3	11402	37	Romans	scholastics	jarring	
+7	11702	37	admonishing	eschew	attainments	
+19	12501	37	annihilates	capably	daughter	
+6	11701	37	astound	parters	persist	W
+5	11501	37	bewilderingly	wallet	balled	
+2	11401	37	breaking	dreaded	Steinberg	W
+10	12003	37	combed	Steinberg	rightfulness	
+14	12302	36	dubbed	persist	terminators	
+9	12001	37	flanking	neat	measures	FAS
+18	12306	37	goblins	rightfulness	pessimist	FAS
+4	11403	37	intercepted	audiology	tinily	
+16	12304	37	overlay	overlay	announces	FAS
+17	12305	37	perturb	measures	featherweight	FAS
+12	12005	37	scatterbrain	tinily	impulsive	
+11	12004	37	subjective	jarring	capably	
+8	11703	37	sumac	quitter	fanatic	
+7	11702	37	admonishing	eschew	attainments	
+19	12501	37	annihilates	capably	daughter	
+6	11701	37	astound	parters	persist	W
+5	11501	37	bewilderingly	wallet	balled	
+2	11401	37	breaking	dreaded	Steinberg	W
+10	12003	37	combed	Steinberg	rightfulness	
+14	12302	36	dubbed	persist	terminators	
+9	12001	37	flanking	neat	measures	FAS
+18	12306	37	goblins	rightfulness	pessimist	FAS
+4	11403	37	intercepted	audiology	tinily	
+16	12304	37	overlay	overlay	announces	FAS
+17	12305	37	perturb	measures	featherweight	FAS
+12	12005	37	scatterbrain	tinily	impulsive	
+11	12004	37	subjective	jarring	capably	
+8	11703	37	sumac	quitter	fanatic	
+select * from table_where_t1 where id > 11 order by id;
+id	fld1	companynr	fld3	fld4	fld5	fld6
+12	12005	37	scatterbrain	tinily	impulsive	
+13	12301	37	Eulerian	balled	starlet	
+14	12302	36	dubbed	persist	terminators	
+15	12303	37	Kane	attainments	untying	
+16	12304	37	overlay	overlay	announces	FAS
+17	12305	37	perturb	measures	featherweight	FAS
+18	12306	37	goblins	rightfulness	pessimist	FAS
+19	12501	37	annihilates	capably	daughter	
+20	12602	37	Wotan	impulsive	decliner	FAS
+select * from table_where_t1 where fld4 < 'teethe' order by fld3;
+id	fld1	companynr	fld3	fld4	fld5	fld6
+7	11702	37	admonishing	eschew	attainments	
+19	12501	37	annihilates	capably	daughter	
+6	11701	37	astound	parters	persist	W
+2	11401	37	breaking	dreaded	Steinberg	W
+10	12003	37	combed	Steinberg	rightfulness	
+14	12302	36	dubbed	persist	terminators	
+13	12301	37	Eulerian	balled	starlet	
+9	12001	37	flanking	neat	measures	FAS
+18	12306	37	goblins	rightfulness	pessimist	FAS
+4	11403	37	intercepted	audiology	tinily	
+15	12303	37	Kane	attainments	untying	
+16	12304	37	overlay	overlay	announces	FAS
+17	12305	37	perturb	measures	featherweight	FAS
+3	11402	37	Romans	scholastics	jarring	
+11	12004	37	subjective	jarring	capably	
+8	11703	37	sumac	quitter	fanatic	
+20	12602	37	Wotan	impulsive	decliner	FAS
+select * from table_where_t1 where fld4 = fld3;
+id	fld1	companynr	fld3	fld4	fld5	fld6
+16	12304	37	overlay	overlay	announces	FAS
+drop table table_where_t1;

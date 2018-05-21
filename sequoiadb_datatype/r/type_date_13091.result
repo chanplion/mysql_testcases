@@ -1,0 +1,317 @@
+drop table if exists table_date_t1,table_date_t2;
+create table table_date_t1 (a char(16), b date);
+insert into table_date_t1 SET a='test 2000-01-01', b='2000-01-01';
+select * from table_date_t1 where b = '2000-01-01';
+a	b
+test 2000-01-01	2000-01-01
+drop table table_date_t1;
+CREATE TABLE table_date_t1 (name char(6), cdate date);
+INSERT INTO table_date_t1 VALUES ('name1','1998-01-01');
+INSERT INTO table_date_t1 VALUES ('name2','1998-01-01');
+INSERT INTO table_date_t1 VALUES ('name1','1998-01-02');
+INSERT INTO table_date_t1 VALUES ('name2','1998-01-02');
+CREATE TABLE table_date_t2 (cdate date, note char(6));
+INSERT INTO table_date_t2 VALUES ('1998-01-01','note01');
+INSERT INTO table_date_t2 VALUES ('1998-01-02','note02');
+select name,table_date_t1.cdate,note from table_date_t1,table_date_t2 where table_date_t1.cdate=table_date_t2.cdate and table_date_t1.cdate='1998-01-01' order by cdate;
+name	cdate	note
+name1	1998-01-01	note01
+name2	1998-01-01	note01
+drop table table_date_t1,table_date_t2;
+CREATE TABLE table_date_t1 ( datum DATE );
+INSERT INTO table_date_t1 VALUES ( "2000-1-1" );
+INSERT INTO table_date_t1 VALUES ( "2000-1-2" );
+INSERT INTO table_date_t1 VALUES ( "2000-1-3" );
+INSERT INTO table_date_t1 VALUES ( "2000-1-4" );
+INSERT INTO table_date_t1 VALUES ( "2000-1-5" );
+SELECT * FROM table_date_t1 WHERE datum BETWEEN cast("2000-1-2" as date) AND cast("2000-1-4" as date) order by datum;
+datum
+2000-01-02
+2000-01-03
+2000-01-04
+SELECT * FROM table_date_t1 WHERE datum BETWEEN cast("2000-1-2" as date) AND datum - INTERVAL 100 DAY order by datum;
+datum
+DROP TABLE table_date_t1;
+CREATE TABLE table_date_t1 (
+user_id char(10),
+summa int(11),
+rdate date
+);
+INSERT INTO table_date_t1 VALUES ('aaa',100,'1998-01-01');
+INSERT INTO table_date_t1 VALUES ('aaa',200,'1998-01-03');
+INSERT INTO table_date_t1 VALUES ('bbb',50,'1998-01-02');
+INSERT INTO table_date_t1 VALUES ('bbb',200,'1998-01-04');
+select max(rdate) as s from table_date_t1 where rdate < '1998-01-03' having s> "1998-01-01";
+s
+1998-01-02
+select max(rdate) as s from table_date_t1 having s="1998-01-04";
+s
+1998-01-04
+select max(rdate+0) as s from table_date_t1 having s="19980104";
+s
+19980104
+drop table table_date_t1;
+create table table_date_t1 (date date);
+insert into table_date_t1 values ("2000-08-10"),("2000-08-11");
+select date_add(date,INTERVAL 1 DAY),date_add(date,INTERVAL 1 SECOND) from table_date_t1;
+date_add(date,INTERVAL 1 DAY)	date_add(date,INTERVAL 1 SECOND)
+2000-08-11	2000-08-10 00:00:01
+2000-08-12	2000-08-11 00:00:01
+drop table table_date_t1;
+CREATE TABLE table_date_t1(AFIELD INT);
+INSERT INTO table_date_t1 VALUES(1);
+CREATE TABLE table_date_t2(GMT  VARCHAR(32));
+INSERT INTO table_date_t2 VALUES('GMT-0800');
+SELECT DATE_FORMAT("2002-03-06 10:11:12", CONCAT('%a, %d %M %Y %H:%i:%s ', table_date_t2.GMT))
+FROM table_date_t1, table_date_t2 GROUP BY table_date_t1.AFIELD;
+DATE_FORMAT("2002-03-06 10:11:12", CONCAT('%a, %d %M %Y %H:%i:%s ', table_date_t2.GMT))
+Wed, 06 March 2002 10:11:12 GMT-0800
+INSERT INTO table_date_t1 VALUES(1);
+SELECT DATE_FORMAT("2002-03-06 10:11:12", CONCAT('%a, %d %M %Y %H:%i:%s ', table_date_t2.GMT)),
+DATE_FORMAT("2002-03-06 10:11:12", CONCAT('%a, %d %M %Y %H:%i:%s ', table_date_t2.GMT))
+FROM table_date_t1,table_date_t2 GROUP BY table_date_t1.AFIELD;
+DATE_FORMAT("2002-03-06 10:11:12", CONCAT('%a, %d %M %Y %H:%i:%s ', table_date_t2.GMT))	DATE_FORMAT("2002-03-06 10:11:12", CONCAT('%a, %d %M %Y %H:%i:%s ', table_date_t2.GMT))
+Wed, 06 March 2002 10:11:12 GMT-0800	Wed, 06 March 2002 10:11:12 GMT-0800
+drop table table_date_t1,table_date_t2;
+CREATE TABLE table_date_t1 (f1 DATE);
+CREATE TABLE table_date_t2 (f2 VARCHAR(8));
+CREATE TABLE table_date_t3 (f2 CHAR(8));
+INSERT INTO table_date_t1 VALUES ('1978-11-26');
+INSERT INTO table_date_t2 SELECT f1+0 FROM table_date_t1;
+INSERT INTO table_date_t2 SELECT f1+0 FROM table_date_t1 UNION SELECT f1+0 FROM table_date_t1;
+INSERT INTO table_date_t3 SELECT f1+0 FROM table_date_t1;
+INSERT INTO table_date_t3 SELECT f1+0 FROM table_date_t1 UNION SELECT f1+0 FROM table_date_t1;
+SELECT * FROM table_date_t2 order by f2;
+f2
+19781126
+19781126
+SELECT * FROM table_date_t3 order by f2;
+f2
+19781126
+19781126
+DROP TABLE table_date_t1, table_date_t2, table_date_t3;
+create table table_date_t1(start_date date, end_date date);
+insert into table_date_t1 values ('2000-01-01','2000-01-02');
+select 1 from table_date_t1 where cast('2000-01-01 12:01:01' as datetime) between start_date and end_date;
+1
+1
+drop table table_date_t1;
+CREATE TABLE table_date_t1 (a DATE, b INT);
+INSERT INTO table_date_t1 VALUES (DATE(NOW()), 1);
+SELECT COUNT(*) FROM table_date_t1 WHERE a = NOW();
+COUNT(*)
+0
+EXPLAIN SELECT COUNT(*) FROM table_date_t1 WHERE a = NOW();
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_date_t1	NULL	ALL	NULL	NULL	NULL	NULL	0	0.00	Using where with pushed condition (`test`.`table_date_t1`.`a` = <cache>(now()))
+Warnings:
+Note	1003	/* select#1 */ select count(0) AS `COUNT(*)` from `test`.`table_date_t1` where (`test`.`table_date_t1`.`a` = <cache>(now()))
+INSERT INTO table_date_t1 VALUES (DATE(NOW()), 2);
+SELECT COUNT(*) FROM table_date_t1 WHERE a = NOW();
+COUNT(*)
+0
+EXPLAIN SELECT COUNT(*) FROM table_date_t1 WHERE a = NOW();
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_date_t1	NULL	ALL	NULL	NULL	NULL	NULL	0	0.00	Using where with pushed condition (`test`.`table_date_t1`.`a` = <cache>(now()))
+Warnings:
+Note	1003	/* select#1 */ select count(0) AS `COUNT(*)` from `test`.`table_date_t1` where (`test`.`table_date_t1`.`a` = <cache>(now()))
+SELECT COUNT(*) FROM table_date_t1 WHERE a = NOW() AND b = 1;
+COUNT(*)
+0
+EXPLAIN SELECT COUNT(*) FROM table_date_t1 WHERE a = NOW() AND b = 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_date_t1	NULL	ALL	NULL	NULL	NULL	NULL	0	0.00	Using where with pushed condition ((`test`.`table_date_t1`.`b` = 1) and (`test`.`table_date_t1`.`a` = <cache>(now())))
+SELECT COUNT(*) FROM table_date_t1 WHERE a = NOW();
+COUNT(*)
+0
+EXPLAIN SELECT COUNT(*) FROM table_date_t1 WHERE a = NOW();
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_date_t1	NULL	ALL	NULL	NULL	NULL	NULL	0	0.00	Using where with pushed condition (`test`.`table_date_t1`.`a` = <cache>(now()))
+Warnings:
+Note	1003	/* select#1 */ select count(0) AS `COUNT(*)` from `test`.`table_date_t1` where (`test`.`table_date_t1`.`a` = <cache>(now()))
+DROP TABLE table_date_t1;
+CREATE TABLE table_date_t1 (a DATE);
+CREATE TABLE table_date_t2 (a DATE);
+INSERT IGNORE INTO table_date_t1 VALUES ('0000-00-00'),('0000-00-00');
+Warnings:
+Warning	1264	Out of range value for column 'a' at row 1
+Warning	1264	Out of range value for column 'a' at row 2
+INSERT IGNORE INTO table_date_t2 VALUES ('0000-00-00'),('0000-00-00');
+Warnings:
+Warning	1264	Out of range value for column 'a' at row 1
+Warning	1264	Out of range value for column 'a' at row 2
+SELECT * FROM table_date_t1 WHERE a = '0000-00-00';
+a
+Warnings:
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect datetime value: '0000-00-00'
+Warning	1292	Incorrect datetime value: '0000-00-00'
+SELECT * FROM table_date_t2 WHERE a = '0000-00-00';
+a
+Warnings:
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect datetime value: '0000-00-00'
+Warning	1292	Incorrect datetime value: '0000-00-00'
+SET SQL_MODE=TRADITIONAL;
+EXPLAIN SELECT * FROM table_date_t1 WHERE a = '0000-00-00';
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_date_t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
+Warnings:
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect datetime value: '0000-00-00'
+Note	1003	/* select#1 */ select `test`.`table_date_t1`.`a` AS `a` from `test`.`table_date_t1` where (`test`.`table_date_t1`.`a` = '0000-00-00')
+SELECT * FROM table_date_t1 WHERE a = '0000-00-00';
+a
+Warnings:
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect datetime value: '0000-00-00'
+Warning	1292	Incorrect datetime value: '0000-00-00'
+SELECT * FROM table_date_t2 WHERE a = '0000-00-00';
+a
+Warnings:
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '0000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect datetime value: '0000-00-00'
+Warning	1292	Incorrect datetime value: '0000-00-00'
+INSERT INTO table_date_t1 VALUES ('0000-00-00');
+ERROR 22007: Incorrect date value: '0000-00-00' for column 'a' at row 1
+SET SQL_MODE=DEFAULT;
+DROP TABLE table_date_t1,table_date_t2;
+CREATE TABLE table_date_t1 (a DATE);
+CREATE TABLE table_date_t2 (a DATE);
+INSERT IGNORE INTO table_date_t1 VALUES ('1000-00-00'),('1000-00-00');
+Warnings:
+Warning	1264	Out of range value for column 'a' at row 1
+Warning	1264	Out of range value for column 'a' at row 2
+INSERT IGNORE INTO table_date_t2 VALUES ('1000-00-00'),('1000-00-00');
+Warnings:
+Warning	1264	Out of range value for column 'a' at row 1
+Warning	1264	Out of range value for column 'a' at row 2
+SELECT * FROM table_date_t1 WHERE a = '1000-00-00';
+a
+Warnings:
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+SELECT * FROM table_date_t2 WHERE a = '1000-00-00';
+a
+Warnings:
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+SET SQL_MODE=TRADITIONAL;
+EXPLAIN SELECT * FROM table_date_t1 WHERE a = '1000-00-00';
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	table_date_t1	NULL	ALL	NULL	NULL	NULL	NULL	0	0.00	Using where with pushed condition (`test`.`table_date_t1`.`a` = '1000-00-00')
+Warnings:
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+Note	1003	/* select#1 */ select `test`.`table_date_t1`.`a` AS `a` from `test`.`table_date_t1` where (`test`.`table_date_t1`.`a` = '1000-00-00')
+SELECT * FROM table_date_t1 WHERE a = '1000-00-00';
+a
+Warnings:
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+SELECT * FROM table_date_t2 WHERE a = '1000-00-00';
+a
+Warnings:
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+Warning	1292	Incorrect date value: '1000-00-00' for column 'a' at row 1
+INSERT INTO table_date_t1 VALUES ('1000-00-00');
+ERROR 22007: Incorrect date value: '1000-00-00' for column 'a' at row 1
+SET SQL_MODE=DEFAULT;
+DROP TABLE table_date_t1,table_date_t2;
+CREATE TABLE table_date_t1 SELECT curdate() AS f1;
+SELECT hour(f1), minute(f1), second(f1) FROM table_date_t1;
+hour(f1)	minute(f1)	second(f1)
+0	0	0
+DROP TABLE table_date_t1;
+End of 5.0 tests
+create table table_date_t1 (a date) engine = sequoiadb;
+insert into table_date_t1 values ('0000-01-01'), ('0000-00-01'), ('0001-01-01');
+ERROR 22007: Incorrect date value: '0000-00-01' for column 'a' at row 2
+select * from table_date_t1 where a between '0000-00-01' and '0000-00-02';
+a
+drop table table_date_t1;
+#
+# Bug #33629: last_day function can return null, but has 'not null'
+#             flag set for result
+#
+SELECT 1 FROM (SELECT LAST_DAY('0')) a;
+1
+1
+Warnings:
+Warning	1292	Incorrect datetime value: '0'
+SELECT 1 FROM (SELECT MAKEDATE(2011,0)) a;
+1
+1
+CREATE TABLE table_date_t1 AS
+SELECT LAST_DAY('1970-01-01') AS f1,
+MAKEDATE(1970, 1)      AS f2;
+DESCRIBE table_date_t1;
+Field	Type	Null	Key	Default	Extra
+f1	date	YES		NULL	
+f2	date	YES		NULL	
+DROP TABLE table_date_t1;
+#
+# Testing cast from DECIMAL to DATE
+#
+CREATE TABLE table_date_t1 (a DECIMAL(23,4));
+INSERT INTO table_date_t1 VALUES (NULL),(101010.9999),(-101010.9999);
+SELECT a, CAST(a AS DATE) FROM table_date_t1;
+a	CAST(a AS DATE)
+NULL	NULL
+101010.9999	2010-10-10
+-101010.9999	NULL
+Warnings:
+Warning	1292	Incorrect datetime value: '-101010.9999'
+DROP TABLE table_date_t1;
+#
+# Testing CASE with DATE type without a found item
+#
+SELECT CAST(CASE WHEN 0 THEN '2001-01-01' END AS DATE);
+CAST(CASE WHEN 0 THEN '2001-01-01' END AS DATE)
+NULL
+SELECT CAST(CASE WHEN 0 THEN DATE'2001-01-01' END AS DATE);
+CAST(CASE WHEN 0 THEN DATE'2001-01-01' END AS DATE)
+NULL
+#
+# Testing DATE field with NULL value with NOT IN
+#
+CREATE TABLE table_date_t1 (a DATE);
+INSERT INTO table_date_t1 VALUES (NULL);
+SELECT * FROM table_date_t1 WHERE a NOT IN (DATE'2001-01-01',DATE'2002-02-02');
+a
+DROP TABLE table_date_t1;
+CREATE TABLE table_date_t1(a int);
+INSERT INTO table_date_t1 VALUE(15.00+adddate('2011-00-00', 1));
+ERROR 22007: Incorrect datetime value: '2011-00-00'
+DROP TABLE table_date_t1;
+create table table_date_t1 (a date);
+insert into table_date_t1 values ('1000-01-01');
+insert into table_date_t1 values ('2000-01-01');
+insert into table_date_t1 values ('9999-12-31');
+insert into table_date_t1 values ('abcd');
+ERROR 22007: Incorrect date value: 'abcd' for column 'a' at row 1
+insert into table_date_t1 values ('99999-01-01');
+ERROR 22007: Incorrect date value: '99999-01-01' for column 'a' at row 1
+select * from table_date_t1 order by a;
+a
+1000-01-01
+2000-01-01
+9999-12-31
+update table_date_t1 set a = '2018-01-02' where a = '1000-01-01';
+select * from table_date_t1 order by a;
+a
+2000-01-01
+2018-01-02
+9999-12-31
+delete from table_date_t1 where a = '1000-01-01';
+select * from table_date_t1 order by a;
+a
+2000-01-01
+2018-01-02
+9999-12-31
+drop table table_date_t1;
